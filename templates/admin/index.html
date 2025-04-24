@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container admin-content">
+    <h1 class="mt-4 mb-4">管理系统</h1>
+    
+    <!-- 用户统计面板 -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">用户统计</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5>总用户数</h5>
+                            <h3>{{ total_users }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h5>今日注册</h5>
+                            <h3>{{ today_users }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <h5>总佣金支付</h5>
+                            <h3>${{ total_commissions }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h5>待处理提现</h5>
+                            <h3>{{ pending_withdrawals }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 用户管理面板 -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">用户管理</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户名</th>
+                            <th>邮箱</th>
+                            <th>注册日期</th>
+                            <th>推荐人</th>
+                            <th>佣金余额</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>{% if user.referrer %}{{ user.referrer.username }}{% else %}无{% endif %}</td>
+                            <td>${{ user.balance }}</td>
+                            <td>
+                                <a href="{{ url_for('view_user', user_id=user.id) }}" class="btn btn-sm btn-info">查看</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最近提现申请 -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">最近提现申请</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>用户</th>
+                            <th>金额</th>
+                            <th>状态</th>
+                            <th>申请时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for withdrawal in recent_withdrawals %}
+                        <tr>
+                            <td>{{ withdrawal.id }}</td>
+                            <td>{{ withdrawal.user.username }}</td>
+                            <td>${{ withdrawal.amount }}</td>
+                            <td>
+                                {% if withdrawal.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">处理中</span>
+                                {% elif withdrawal.status == 'completed' %}
+                                <span class="badge bg-success">已提现</span>
+                                {% else %}
+                                <span class="badge bg-danger">已拒绝</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('admin_withdrawals') }}" class="btn btn-sm btn-primary">管理</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

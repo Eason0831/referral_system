@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container admin-content mt-4">
+    <h3 data-translate="提现申请管理">提现申请管理</h3>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th data-translate="用户">用户</th>
+                    <th data-translate="金额 (CAD$)">金额 (CAD$)</th>
+                    <th data-translate="方式">方式</th>
+                    <th data-translate="详细信息">详细信息</th>
+                    <th data-translate="状态">状态</th>
+                    <th data-translate="申请时间">申请时间</th>
+                    <th data-translate="处理时间">处理时间</th>
+                    <th data-translate="操作">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for withdrawal in withdrawals %}
+                <tr>
+                    <td>{{ withdrawal.id }}</td>
+                    <td>{{ withdrawal.user.username }}</td>
+                    <td>CAD$ {{ "%.2f"|format(withdrawal.amount) }}</td>
+                    <td>
+                        {% if withdrawal.method_type == 'alipay' %}<span class="badge bg-primary" data-translate="支付宝">支付宝</span>
+                        {% elif withdrawal.method_type == 'wechat' %}<span class="badge bg-success" data-translate="微信">微信</span>
+                        {% elif withdrawal.method_type == 'emt' %}<span class="badge bg-info">EMT</span>
+                        {% elif withdrawal.method_type == 'member' %}<span class="badge bg-warning" data-translate="会员账户">会员账户</span>
+                        {% else %}{{ withdrawal.method_type }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <dl class="mb-0 small">
+                        {% if withdrawal.method_type == 'alipay' %}
+                            <dt data-translate="账号">账号:</dt> <dd class="text-break">{{ withdrawal.alipay_account }}</dd>
+                            <dt data-translate="电话">电话:</dt> <dd>{{ withdrawal.alipay_phone or '-' }}</dd>
+                        {% elif withdrawal.method_type == 'wechat' %}
+                            <dt data-translate="微信ID">微信ID:</dt> <dd class="text-break">{{ withdrawal.wechat_id }}</dd>
+                            <dt data-translate="电话">电话:</dt> <dd>{{ withdrawal.wechat_phone or '-' }}</dd>
+                        {% elif withdrawal.method_type == 'emt' %}
+                            <dt data-translate="银行">银行:</dt> <dd>{{ withdrawal.emt_bank_name }}</dd>
+                            <dt data-translate="邮箱">邮箱:</dt> <dd class="text-break">{{ withdrawal.emt_email }}</dd>
+                            <dt data-translate="姓名">姓名:</dt> <dd>{{ withdrawal.emt_recipient_name }}</dd>
+                            <dt data-translate="电话">电话:</dt> <dd>{{ withdrawal.emt_phone or '-' }}</dd>
+                        {% elif withdrawal.method_type == 'member' %}
+                            <dt data-translate="会员手机">会员手机:</dt> <dd>{{ withdrawal.member_phone }}</dd>
+                            <dt data-translate="会员姓名">会员姓名:</dt> <dd>{{ withdrawal.member_name }}</dd>
+                        {% else %}
+                            <dd>-</dd>
+                        {% endif %}
+                        </dl>
+                    </td>
+                    <td>
+                        {% if withdrawal.status == 'pending' %}
+                            <span class="badge bg-warning text-dark" data-translate="处理中">处理中</span>
+                        {% elif withdrawal.status == 'approved' %}
+                            <span class="badge bg-success" data-translate="已提现">已提现</span>
+                        {% elif withdrawal.status == 'rejected' %}
+                            <span class="badge bg-danger" data-translate="已拒绝">已拒绝</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ withdrawal.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ withdrawal.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ withdrawal.processed_at.strftime('%Y-%m-%d %H:%M') if withdrawal.processed_at else '-' }}</td>
+                    <td>
+                        {% if withdrawal.status == 'pending' %}
+                            <button class="btn btn-sm btn-success mb-1" onclick="processWithdrawal({{ withdrawal.id }}, 'approve')" data-translate="完成">完成</button>
+                            <button class="btn btn-sm btn-danger" onclick="processWithdrawal({{ withdrawal.id }}, 'reject')" data-translate="拒绝">拒绝</button>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toastSuccess" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" data-translate="操作成功！">
+                操作成功！
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+function processWithdrawal(id, action) {
+    if (!confirm(`确定要 ${action === 'approve' ? '完成' : '拒绝'} 这笔提现申请吗？`)) {
+        return;
+    }
+
+    fetch(`/admin/withdrawal/${id}/process`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `action=${action}`
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json()
+                .then(errData => { throw new Error(errData.error || `服务器错误: ${response.status}`); })
+                .catch(() => { throw new Error(`服务器错误: ${response.status}`); });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message || '操作成功！');
+            location.reload();
+        } else {
+            alert(data.error || '操作失败！');
+        }
+    })
+    .catch(error => {
+        console.error('提现处理请求失败:', error);
+        alert(`请求处理时发生错误: ${error.message}`);
+    });
+}
+
+// 添加状态样式
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.status-cell').forEach(cell => {
+        const status = cell.textContent.trim();
+        switch(status) {
+            case 'pending':
+                cell.innerHTML = '<span class="badge bg-warning">待处理</span>';
+                break;
+            case 'approved':
+                cell.innerHTML = '<span class="badge bg-success">已通过</span>';
+                break;
+            case 'rejected':
+                cell.innerHTML = '<span class="badge bg-danger">已拒绝</span>';
+                break;
+        }
+    });
+});
+</script>
+
+<style>
+.badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: normal;
+}
+.bg-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+.bg-success {
+    background-color: #28a745;
+    color: #fff;
+}
+.bg-danger {
+    background-color: #dc3545;
+    color: #fff;
+}
+.status-pending {
+    color: #000;
+    background-color: #f9f9ea;
+    border: 2px solid #ffc107;
+}
+.status-approved {
+    color: #000;
+    background-color: #f9f9ea;
+    border: 2px solid #28a745;
+}
+.status-rejected {
+    color: #000;
+    background-color: #f9f9ea;
+    border: 2px solid #dc3545;
+}
+</style>
+{% endblock %} 

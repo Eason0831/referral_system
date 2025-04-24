@@ -1,0 +1,781 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 移除旧的 data-* div -->
+    <!-- <div id="user-coupons-data" data-coupons="{{ user_coupons_serializable | tojson | safe }}" style="display: none;"></div> -->
+    <!-- 添加 script 标签存储 JSON -->
+    <script id="user-coupons-json" type="application/json">
+        {{ user_coupons_serializable | tojson | safe }}
+    </script>
+
+    <div class="row">
+        <!-- 用户统计卡片 -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">用户统计</h5>
+                    <h3 class="text-primary">{{ users|length }}</h3>
+                    <p class="text-muted">总注册用户数</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易统计卡片 -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">交易统计</h5>
+                    <h3 class="text-success">CAD$ {{ "%.2f"|format(transactions|sum(attribute='amount')) }}</h3>
+                    <p class="text-muted">总交易金额</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 今日消费额卡片 -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">今日消费额</h5>
+                    <h3 class="text-warning">CAD$ {{ "%.2f"|format(today_total) }}</h3>
+                    <p class="text-muted">当日充值总金额</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 优惠券统计卡片 -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">优惠券统计</h5>
+                    <h3 class="text-info">{{ total_issued_coupons }}</h3>
+                    <p class="text-muted">已发放优惠券数: 已使用 {{ total_used_coupons }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优惠券类型统计 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">优惠券类型统计</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>类型</th>
+                                    <th>总数</th>
+                                    <th>已使用</th>
+                                    <th>已过期</th>
+                                    <th>有效</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type, stats in coupon_types.items() %}
+                                <tr>
+                                    <td>{{ type }}</td>
+                                    <td>{{ stats.total }}</td>
+                                    <td>{{ stats.used }}</td>
+                                    <td>{{ stats.expired }}</td>
+                                    <td>{{ stats.valid }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">暂无优惠券类型数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 推荐人数排行榜 -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">推荐人数排行榜</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>排名</th>
+                                <th>用户名</th>
+                                <th>直接推荐</th>
+                                <th>间接推荐</th>
+                                <th>总推荐人数</th>
+                                <th>总佣金</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for referrer in top_referrers %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ referrer.username }}</td>
+                                <td>{{ referrer.direct_count }}人</td>
+                                <td>{{ referrer.indirect_count }}人</td>
+                                <td>{{ referrer.total_count }}人</td>
+                                <td>CAD$ {{ "%.2f"|format(referrer.total_commission) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">暂无推荐记录</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 用户管理 -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">用户管理</h3>
+            </div>
+            <div class="card-body">
+                <!-- 添加搜索表单 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="user-search" class="form-control" placeholder="搜索用户名/邮箱/手机号">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" id="search-btn" type="button">
+                                    <i class="fas fa-search"></i> 搜索
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="user-management-table" class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>手机号</th>
+                                <th>推荐码</th>
+                                <th>推荐人</th>
+                                <th>总共获得佣金额 (CAD$)</th>
+                                <th>剩余可用佣金额 (CAD$)</th>
+                                <th>注册时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td><a href="javascript:void(0)" class="user-detail-link" data-user-id="{{ user.id }}">{{ user.username }}</a></td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.phone_number }}</td>
+                                <td>{{ user.referral_code }}</td>
+                                <td>
+                                    {% if user.referred_by %}
+                                        {% set referrer = users|selectattr('id', 'eq', user.referred_by)|first %}
+                                        {% if referrer %}
+                                            {{ referrer.username }} (ID: {{ referrer.id }})
+                                        {% else %}
+                                            未知推荐人 (ID: {{ user.referred_by }})
+                                        {% endif %}
+                                    {% else %}
+                                        无推荐人
+                                    {% endif %}
+                                </td>
+                                <td>CAD$ {{ "%.2f"|format(user_commissions[user.id].total_commission) }}</td>
+                                <td>CAD$ {{ "%.2f"|format(user_commissions[user.id].available_balance) }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消费记录管理 -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">充值记录管理</h3>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                    添加充值记录
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户</th>
+                                <th>金额</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.id }}</td>
+                                <td>{{ transaction.user.username }}</td>
+                                <td>CAD$ {{ "%.2f"|format(transaction.amount) }}</td>
+                                <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优惠券管理 -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">优惠券管理</h3>
+                <div>
+                    <button type="button" class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#verifyCouponModal">
+                        <i class="fas fa-qrcode"></i> 验证优惠券
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCouponModal">
+                        <i class="fas fa-plus"></i> 添加优惠券
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>名称</th>
+                                <th>描述</th>
+                                <th>类型</th>
+                                <th>价值</th>
+                                <th>所属用户</th>
+                                <th>创建时间</th>
+                                <th>过期日期</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_coupon in user_coupons %}
+                            {% if not user_coupon.is_used %}
+                            <tr>
+                                <td>{{ user_coupon.coupon.id }}</td>
+                                <td>{{ user_coupon.coupon.name }}</td>
+                                <td>{{ user_coupon.coupon.description }}</td>
+                                <td>{{ user_coupon.coupon.type }}</td>
+                                <td>CAD$ {{ "%.2f"|format(user_coupon.coupon.value) }}</td>
+                                <td>{{ user_coupon.user.username }}</td>
+                                <td>{{ user_coupon.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if user_coupon.coupon.expiry_date %}
+                                        {{ user_coupon.coupon.expiry_date.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                        <span class="text-muted">永不过期</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary edit-expiry-btn" 
+                                           data-coupon-id="{{ user_coupon.coupon.id }}">
+                                        修改过期日期
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-coupon-btn" 
+                                           data-coupon-id="{{ user_coupon.coupon.id }}">
+                                        删除
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加消费记录模态框 -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加充值记录</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTransactionForm">
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">用户</label>
+                        <select class="form-select" id="user_id" name="user_id" required>
+                            <option value="">请选择用户</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">充值金额</label>
+                        <input type="number" class="form-control" id="amount" name="amount" required min="0.01" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addTransaction()">添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加优惠券模态框 -->
+<div class="modal fade" id="addCouponModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加优惠券</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCouponForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">名称</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">描述</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="type" class="form-label">类型</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="dish">菜品</option>
+                            <option value="drink">饮品</option>
+                            <option value="duck">烤鸭</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="value" class="form-label">价值</label>
+                        <input type="number" class="form-control" id="value" name="value" required min="0.01" step="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label for="expiry_date" class="form-label">过期日期 <small class="text-muted">(留空表示永不过期)</small></label>
+                        <input type="datetime-local" class="form-control" id="expiry_date" name="expiry_date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="user_id" class="form-label">分配给用户（可选）</label>
+                        <select class="form-select" id="coupon_user_id" name="user_id">
+                            <option value="">-- 不分配给特定用户 --</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }} ({{ user.email }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">如果选择用户，优惠券将直接分配给该用户。否则，优惠券将添加到系统中供后续分配。</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addCoupon()">添加</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 用户详情弹窗 -->
+<div class="modal fade" id="userDetailModal" tabindex="-1" role="dialog" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userDetailModalLabel">用户详细信息</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="user-detail-loading" class="text-center">
+                    <i class="fas fa-spinner fa-spin fa-3x"></i>
+                    <p>加载中...</p>
+                </div>
+                <div id="user-detail-content" style="display: none;">
+                    <ul class="nav nav-tabs" id="userDetailTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="basic-tab" data-bs-toggle="tab" href="#basic" role="tab">基本信息</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="coupons-tab" data-bs-toggle="tab" href="#coupons" role="tab">优惠券</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="userDetailTabContent">
+                        <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                            <form id="user-basic-form" class="mt-3">
+                                <input type="hidden" id="edit-user-id">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="edit-username">用户名</label>
+                                        <input type="text" class="form-control" id="edit-username" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="edit-phone">手机号</label>
+                                        <input type="text" class="form-control" id="edit-phone" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="edit-email">邮箱</label>
+                                        <input type="email" class="form-control" id="edit-email" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="edit-referrer">推荐人</label>
+                                        <input type="text" class="form-control" id="edit-referrer" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="edit-commission-balance">共获得佣金 (CAD)</label>
+                                        <input type="text" class="form-control" id="edit-commission-balance" readonly>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="edit-registration-time">剩余可提现余额 (CAD)</label>
+                                        <input type="text" class="form-control" id="edit-registration-time" readonly>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="coupons" role="tabpanel">
+                            <div class="table-responsive mt-3">
+                                <table class="table table-bordered" id="coupons-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>类型</th>
+                                            <th>价值 (CAD)</th>
+                                            <th>描述</th>
+                                            <th>状态</th>
+                                            <th>创建时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="coupons-table-body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 验证优惠券模态框 -->
+<div class="modal fade" id="verifyCouponModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">验证优惠券</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="coupon_code" class="form-label">输入兑换码</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="coupon_code" 
+                               placeholder="格式: CP-XXXX-XXXX-XXXX">
+                        <button class="btn btn-primary" type="button" onclick="verifyCoupon()">验证</button>
+                    </div>
+                </div>
+                
+                <div id="verify-result">
+                    <!-- 验证结果将显示在这里 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+
+    // Safely get the coupon data from the script tag
+    let allUserCouponsData = [];
+    try {
+        const jsonDataScript = document.getElementById('user-coupons-json'); // 获取 script 标签
+        if (jsonDataScript && jsonDataScript.textContent) {
+            allUserCouponsData = JSON.parse(jsonDataScript.textContent); // 解析 script 内容
+        } else {
+            console.error("User coupons JSON script tag not found or empty.");
+        }
+    } catch (e) {
+        console.error("Error parsing user coupons JSON from script tag:", e, jsonDataScript ? jsonDataScript.textContent : 'N/A');
+    }
+    console.log('All Coupon Data:', allUserCouponsData); // 保持日志输出以供检查
+
+    // --- 恢复完整的 showUserDetail 函数 ---
+    function showUserDetail(userId) {
+        console.log('[showUserDetail] 尝试为用户显示详情，用户ID:', userId, 'Type:', typeof userId);
+        const modalElement = document.getElementById('userDetailModal');
+        const loadingDiv = document.getElementById('user-detail-loading');
+        const contentDiv = document.getElementById('user-detail-content');
+        const couponsTableBody = document.getElementById('coupons-table-body');
+
+        if (!modalElement || !loadingDiv || !contentDiv || !couponsTableBody) {
+            console.error('[showUserDetail] 错误：无法找到必要的模态框元素。');
+            alert('无法初始化用户详情视图。');
+            return;
+        }
+
+        // 显示加载状态
+        $(loadingDiv).show();
+        $(contentDiv).hide();
+        $(couponsTableBody).empty(); // 清空旧的优惠券列表
+        $('.no-match-row').remove(); // 清除用户管理表格中的搜索未匹配提示
+
+        try {
+            // 获取 Bootstrap Modal 实例
+            const userDetailModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+            // 从表格行提取基本信息
+            const userRow = $('#user-management-table tbody tr').has('a.user-detail-link[data-user-id="' + userId + '"]');
+
+            if (!userRow.length) {
+                console.error('[showUserDetail] 错误：无法在表格中找到用户ID为 ' + userId + ' 的行。');
+                $(loadingDiv).hide();
+                $(contentDiv).html('<div class="alert alert-warning"><h5>找不到指定用户</h5></div>').show();
+                userDetailModal.show(); // 仍然显示模态框以展示错误
+                return;
+            }
+
+            // 提取数据 (注意td索引从0开始)
+            const username = userRow.find('td:eq(1) a').text().trim() || '-';
+            const email = userRow.find('td:eq(2)').text().trim() || '-';
+            const phone = userRow.find('td:eq(3)').text().trim() || '-';
+            const referrer = userRow.find('td:eq(5)').text().trim() || '无推荐人';
+            const totalCommText = userRow.find('td:eq(6)').text();
+            const availBalText = userRow.find('td:eq(7)').text();
+            const regTime = userRow.find('td:eq(8)').text().trim() || '-'; // 假设注册时间在第9列(索引8)
+
+            // 解析金额
+            const totalComm = parseFloat(totalCommText.replace(/[^0-9.-]+/g, ''));
+            const availBal = parseFloat(availBalText.replace(/[^0-9.-]+/g, ''));
+
+            // 填充基本信息
+            $('#edit-user-id').val(userId);
+            $('#edit-username').val(username);
+            $('#edit-email').val(email);
+            $('#edit-phone').val(phone);
+            $('#edit-referrer').val(referrer);
+            $('#edit-commission-balance').val('CAD$ ' + (isNaN(totalComm) ? '0.00' : totalComm.toFixed(2)));
+            $('#edit-registration-time').val('CAD$ ' + (isNaN(availBal) ? '0.00' : availBal.toFixed(2))); // 这里仍然显示可用余额
+            // TODO: 如果需要显示注册时间, 需要在模态框HTML中添加相应字段并在此填充。
+            // 例如: $('#some-new-reg-time-field').val(regTime);
+            
+            // 填充优惠券列表
+            const userCoupons = allUserCouponsData.filter(c => c.user_id == userId);
+            console.log('Filtered Coupons for user', userId, ':', userCoupons);
+
+            if (userCoupons.length === 0) {
+                $(couponsTableBody).append('<tr><td colspan="6" class="text-center">该用户暂无优惠券</td></tr>');
+            } else {
+                userCoupons.forEach(function(c) {
+                    const rowHtml = `<tr>
+                        <td>${c.id}</td>
+                        <td>${c.type || 'N/A'}</td>
+                        <td>CAD$ ${c.value ? c.value.toFixed(2) : '0.00'}</td>
+                        <td>${c.description || '-'}</td>
+                        <td>${c.status || '未知'}</td>
+                        <td>${c.created_time || '-'}</td>
+                    </tr>`;
+                    $(couponsTableBody).append(rowHtml);
+                });
+            }
+
+            // 切换到基本信息标签页（如果需要）
+            const basicTab = document.querySelector('#basic-tab');
+            if (basicTab) {
+                const tab = new bootstrap.Tab(basicTab);
+                tab.show();
+            }
+            
+            // 隐藏加载，显示内容
+            $(loadingDiv).hide();
+            $(contentDiv).show();
+
+            // 显示模态框
+            userDetailModal.show();
+            console.log('[showUserDetail] 用户详情模态框已显示。');
+
+        } catch (e) {
+            console.error('[showUserDetail] 处理用户详情时发生错误:', e);
+            alert('加载用户详情时出错，请检查浏览器控制台。');
+            $(loadingDiv).hide();
+            $(contentDiv).html('<div class="alert alert-danger"><h5>加载用户详情时出错</h5><p>详细信息请查看浏览器控制台。</p></div>').show();
+            try { bootstrap.Modal.getOrCreateInstance(modalElement).show(); } catch(modalErr) {}
+        }
+    }
+
+    // --- 恢复用户详情点击事件绑定 ---
+    $(document).on('click', '.user-detail-link', function(e) {
+        e.preventDefault(); 
+        const userId = $(this).data('user-id');
+        if (userId) {
+            showUserDetail(userId);
+        } else {
+            console.error('无法从点击的链接获取用户ID。');
+            alert('无法获取用户信息，链接可能已损坏。');
+        }
+    });
+
+    // --- clientSideSearch 函数定义 (保持不变) ---
+    function clientSideSearch(searchTerm) {
+        const term = searchTerm.trim().toLowerCase();
+        if (!term) return;
+        const $tbody = $('#user-management-table tbody');
+        $tbody.find('.no-match-row').remove();
+        let found = false;
+        $tbody.find('tr').each(function() {
+            const text = $(this).text().toLowerCase();
+            if (text.includes(term)) {
+                $(this).show();
+                found = true;
+            } else {
+                $(this).hide();
+            }
+        });
+        if (!found) {
+            $tbody.append('<tr class="no-match-row"><td colspan="9" class="text-center">没有找到匹配的用户</td></tr>');
+        }
+    }
+
+    // --- 其他按钮事件绑定等 ---
+    $('.toggle-coupon-btn').click(function() {
+        const couponId = $(this).data('coupon-id');
+        const isActive = $(this).data('coupon-status');
+        const buttonText = isActive ? '禁用' : '启用';
+        if (confirm(`确定要${buttonText}这个优惠券吗？`)) {
+            fetch(`/admin/coupon/toggle/${couponId}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) { location.reload(); } 
+                else { alert(data.error || `${buttonText}失败`); }
+            })
+            .catch(error => { console.error('Error:', error); alert(`${buttonText}失败`); });
+        }
+    });
+    $('.edit-expiry-btn').click(function() {
+        const couponId = $(this).data('coupon-id');
+        Swal.fire({
+            title: '修改过期日期',
+            html: `
+                <input type="date" id="new-expiry-date" class="swal2-input" placeholder="选择新的过期日期">
+                <p class="small text-muted mt-2">留空表示永不过期</p>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '保存',
+            cancelButtonText: '取消',
+            preConfirm: () => {
+                return {
+                    expiry_date: document.getElementById('new-expiry-date').value
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/admin/coupon/${couponId}/update-expiry`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(result.value) })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) { Swal.fire('成功', '已更新', 'success').then(()=>location.reload()); }
+                    else { Swal.fire('错误', data.error || '更新失败', 'error'); }
+                })
+                .catch(error => { Swal.fire('错误', '更新失败', 'error'); });
+            }
+        });
+    });
+    $('.delete-coupon-btn').click(function() {
+        const couponId = $(this).data('coupon-id');
+        Swal.fire({
+            title: '确定要删除这个优惠券吗？',
+            text: "此操作不可撤销！",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: '是的，删除它',
+            cancelButtonText: '取消'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/admin/coupon/${couponId}/delete`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) { Swal.fire('已删除', '', 'success').then(()=>location.reload()); }
+                    else { Swal.fire('错误', data.error || '删除失败', 'error'); }
+                })
+                .catch(error => { Swal.fire('错误', '删除失败', 'error'); });
+            }
+        });
+    });
+    $('#search-btn').click(function() {
+        const searchTerm = $('#user-search').val().trim();
+        if (searchTerm) { clientSideSearch(searchTerm); }
+    });
+    $('#user-search').keypress(function(e) {
+        if (e.which === 13) {
+            const searchTerm = $('#user-search').val().trim();
+            if (searchTerm) { clientSideSearch(searchTerm); }
+        }
+    });
+    
+    // 模态框初始化事件等...
+    const userDetailModalEl = document.getElementById('userDetailModal');
+    if (userDetailModalEl) {
+        userDetailModalEl.addEventListener('shown.bs.modal', function() {
+            const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+            if (currentLang === 'en') {
+                setTimeout(() => { 
+                    if (typeof translateAdminPage === 'function') translateAdminPage('en'); 
+                }, 150);
+            }
+        });
+    }
+
+});
+
+// --- 其他不依赖 jQuery 或 DOM 的全局函数可以放在外面 ---
+function addTransaction() {
+    // ... 实现 ...
+}
+function addCoupon() {
+    // ... 实现 ...
+}
+function verifyCoupon() {
+    // ... 实现 ...
+}
+function markAsUsed(code) {
+    // ... 实现 ...
+}
+function showToast(message) {
+    // ... 实现 ...
+}
+
+// DOMContentLoaded for styles (这个不依赖 jQuery，可以保持原位)
+document.addEventListener('DOMContentLoaded', function() {
+    // ... 样式添加代码 ...
+});
+
+</script>
+{% endblock %}
+{% endblock %} 

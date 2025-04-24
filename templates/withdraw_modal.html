@@ -1,0 +1,119 @@
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">申请提现</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="withdrawForm">
+                    <div class="mb-3">
+                        <label for="withdraw_amount" class="form-label">提现金额</label>
+                        <div class="input-group">
+                            <span class="input-group-text">CAD$</span>
+                            <input type="number" step="0.01" class="form-control" id="withdraw_amount" name="amount"
+                                   max="{{ total_commission }}" required>
+                        </div>
+                        <div class="form-text">可提现金额：CAD$ {{ "%.2f"|format(total_commission) }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">选择提现方式</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="method_type" id="method_alipay" value="alipay" checked>
+                                <label class="form-check-label" for="method_alipay">支付宝</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="method_type" id="method_wechat" value="wechat">
+                                <label class="form-check-label" for="method_wechat">微信</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="method_type" id="method_emt" value="emt">
+                                <label class="form-check-label" for="method_emt">EMT (E-Transfer)</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="method_type" id="method_member" value="member">
+                                <label class="form-check-label" for="method_member">全聚德会员账户</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alipay Fields -->
+                    <div id="alipay_fields">
+                        <div class="mb-3">
+                            <label for="alipay_account" class="form-label">支付宝账号</label>
+                            <input type="text" class="form-control" id="alipay_account" name="alipay_account">
+                        </div>
+                        <div class="mb-3">
+                            <label for="alipay_phone" class="form-label">手机号</label>
+                            <input type="tel" class="form-control" id="alipay_phone" name="alipay_phone">
+                        </div>
+                    </div>
+
+                    <!-- WeChat Fields -->
+                    <div id="wechat_fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="wechat_id" class="form-label">微信号</label>
+                            <input type="text" class="form-control" id="wechat_id" name="wechat_id">
+                        </div>
+                        <div class="mb-3">
+                            <label for="wechat_phone" class="form-label">手机号</label>
+                            <input type="tel" class="form-control" id="wechat_phone" name="wechat_phone">
+                        </div>
+                    </div>
+
+                    <!-- EMT Fields -->
+                    <div id="emt_fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="emt_bank_name" class="form-label">银行名称</label>
+                            <select class="form-select" id="emt_bank_name" name="emt_bank_name">
+                                <option value="">--请选择银行--</option>
+                                <option value="RBC">RBC Royal Bank</option>
+                                <option value="TD">TD Canada Trust</option>
+                                <option value="Scotiabank">Scotiabank</option>
+                                <option value="BMO">BMO Bank of Montreal</option>
+                                <option value="CIBC">CIBC</option>
+                                <option value="National Bank">National Bank of Canada</option>
+                                <option value="HSBC">HSBC Bank Canada</option>
+                                <option value="Simplii">Simplii Financial</option>
+                                <option value="Tangerine">Tangerine Bank</option>
+                                <option value="Other">其他</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="emt_email" class="form-label">EMT 邮箱</label>
+                            <input type="email" class="form-control" id="emt_email" name="emt_email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="emt_recipient_name" class="form-label">收款人姓名</label>
+                            <input type="text" class="form-control" id="emt_recipient_name" name="emt_recipient_name">
+                        </div>
+                        <div class="mb-3">
+                            <label for="emt_phone" class="form-label">电话</label>
+                            <input type="tel" class="form-control" id="emt_phone" name="emt_phone">
+                        </div>
+                    </div>
+
+                    <!-- Member Account Fields -->
+                    <div id="member_fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="member_phone" class="form-label">会员手机号</label>
+                            <input type="tel" class="form-control" id="member_phone" name="member_phone">
+                            <div class="form-text">请输入注册全聚德会员时使用的手机号</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="member_name" class="form-label">会员姓名</label>
+                            <input type="text" class="form-control" id="member_name" name="member_name">
+                            <div class="form-text">请输入与会员账户关联的姓名</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="submitWithdraw">申请提现</button>
+            </div>
+        </div>
+    </div>
+</div> 

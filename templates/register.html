@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">注册新账号</h2>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">电子邮箱</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phone_digits" class="form-label">手机号码</label>
+                        <div class="input-group">
+                            <select class="form-select" id="country_code" name="country_code" style="max-width: 120px;">
+                                {% for country in country_codes %}
+                                <option value="{{ country.code }}" {% if country.code == '+1' %}selected{% endif %}>{{ country.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="tel" class="form-control" id="phone_digits" name="phone_digits" 
+                                   pattern="[0-9]{10}" title="请输入10位数字手机号码" required>
+                        </div>
+                         <div class="form-text">请输入10位数字手机号码（不含国家代码）</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="referral_code" class="form-label">推荐码（可选）</label>
+                        <input type="text" class="form-control" id="referral_code" name="referral_code"
+                            value="{{ request.args.get('referral', '') }}">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">注册</button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p>已有账号？ <a href="{{ url_for('login') }}">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>申请提现</h2>
+    <p>您当前的可用余额: <strong>CAD$ {{ "%.2f"|format(available_balance) }}</strong></p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form id="withdrawForm">
+        <div class="mb-3">
+            <label for="amount" class="form-label">提现金额 (CAD)</label>
+            <input type="number" class="form-control" id="amount" name="amount" required min="0.01" step="0.01" placeholder="请输入提现金额">
+        </div>
+
+        <div class="mb-3">
+            <label for="method_type" class="form-label">选择提现方式</label>
+            <select class="form-select" id="method_type" name="method_type" required>
+                <option value="">-- 请选择 --</option>
+                <option value="alipay">支付宝</option>
+                <option value="wechat">微信</option>
+                <option value="emt">EMT (Email Money Transfer)</option>
+                <option value="member">会员账户</option>
+            </select>
+        </div>
+
+        <div id="alipay-details" class="withdrawal-details" style="display: none;">
+            <h4>支付宝信息</h4>
+            <div class="mb-3">
+                <label for="alipay_account" class="form-label">支付宝账号</label>
+                <input type="text" class="form-control" id="alipay_account" name="alipay_account">
+            </div>
+            <div class="mb-3">
+                <label for="alipay_phone" class="form-label">关联手机号</label>
+                <input type="tel" class="form-control" id="alipay_phone" name="alipay_phone">
+            </div>
+        </div>
+
+        <div id="wechat-details" class="withdrawal-details" style="display: none;">
+             <h4>微信信息</h4>
+            <div class="mb-3">
+                <label for="wechat_id" class="form-label">微信ID</label>
+                <input type="text" class="form-control" id="wechat_id" name="wechat_id">
+            </div>
+             <div class="mb-3">
+                <label for="wechat_phone" class="form-label">关联手机号</label>
+                <input type="tel" class="form-control" id="wechat_phone" name="wechat_phone">
+            </div>
+        </div>
+
+        <div id="emt-details" class="withdrawal-details" style="display: none;">
+             <h4>EMT 信息</h4>
+             <div class="mb-3">
+                <label for="emt_recipient_name" class="form-label">收款人姓名</label>
+                <input type="text" class="form-control" id="emt_recipient_name" name="emt_recipient_name">
+            </div>
+            <div class="mb-3">
+                <label for="emt_email" class="form-label">收款人邮箱</label>
+                <input type="email" class="form-control" id="emt_email" name="emt_email">
+            </div>
+             <div class="mb-3">
+                <label for="emt_bank_name" class="form-label">银行名称 <small class="text-muted">(可选)</small></label>
+                <input type="text" class="form-control" id="emt_bank_name" name="emt_bank_name">
+            </div>
+             <div class="mb-3">
+                <label for="emt_phone" class="form-label">关联手机号 <small class="text-muted">(可选)</small></label>
+                <input type="tel" class="form-control" id="emt_phone" name="emt_phone">
+            </div>
+        </div>
+
+        <div id="member-details" class="withdrawal-details" style="display: none;">
+            <h4>会员账户信息</h4>
+            <div class="mb-3">
+                <label for="member_phone" class="form-label">会员手机号</label>
+                <input type="tel" class="form-control" id="member_phone" name="member_phone" placeholder="接收转账的会员手机号">
+            </div>
+             <div class="mb-3">
+                <label for="member_name" class="form-label">会员姓名</label>
+                <input type="text" class="form-control" id="member_name" name="member_name" placeholder="接收转账的会员姓名">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">提交申请</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const methodSelect = document.getElementById('method_type');
+    const detailSections = document.querySelectorAll('.withdrawal-details');
+    const form = document.getElementById('withdrawForm');
+
+    methodSelect.addEventListener('change', function() {
+        const selectedMethod = this.value;
+        detailSections.forEach(section => {
+            section.style.display = 'none';
+            section.querySelectorAll('input').forEach(input => input.required = false);
+        });
+
+        if (selectedMethod) {
+            const selectedSection = document.getElementById(selectedMethod + '-details');
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+                if (selectedMethod === 'alipay') {
+                    document.getElementById('alipay_account').required = true;
+                 } else if (selectedMethod === 'wechat') {
+                    document.getElementById('wechat_id').required = true;
+                } else if (selectedMethod === 'emt') {
+                    document.getElementById('emt_recipient_name').required = true;
+                    document.getElementById('emt_email').required = true;
+                 } else if (selectedMethod === 'member') {
+                     document.getElementById('member_phone').required = true;
+                     document.getElementById('member_name').required = true;
+                }
+            }
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const data = {};
+        
+        const amount = formData.get('amount');
+        const methodType = formData.get('method_type');
+        if (!amount || parseFloat(amount) <= 0) {
+             alert('请输入有效的提现金额');
+             return;
+        }
+        if (!methodType) {
+             alert('请选择提现方式');
+             return;
+        }
+
+        data['amount'] = amount;
+        data['method_type'] = methodType;
+
+        const selectedSection = document.getElementById(methodType + '-details');
+        let formIsValid = true;
+        if (selectedSection) {
+             selectedSection.querySelectorAll('input[required]').forEach(input => {
+                 if (!input.value.trim()) {
+                     alert(`请填写 ${input.previousElementSibling.innerText || input.name}`);
+                     input.focus();
+                     formIsValid = false;
+                 }
+             });
+             
+             if (!formIsValid) return;
+
+             selectedSection.querySelectorAll('input').forEach(input => {
+                if (input.name && formData.has(input.name)) {
+                   data[input.name] = formData.get(input.name);
+                }
+            });
+        } else if (methodType) {
+             console.error("Could not find details section for method:", methodType);
+             alert("内部错误：无法找到提现方式对应的表单部分。");
+             return;
+        }
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = '处理中...';
+
+        fetch('{{ url_for("withdraw") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            if (!response.ok) {
+                 return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`) });
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.success) {
+                alert(result.message || '提现申请提交成功！');
+                window.location.href = '{{ url_for("dashboard") }}';
+            } else {
+                alert('错误: ' + (result.error || '提交失败，请检查输入或联系管理员'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`提交申请时发生错误: ${error.message}`);
+        })
+        .finally(() => {
+             submitButton.disabled = false;
+             submitButton.textContent = '提交申请';
+        });
+    });
+
+    if (methodSelect.value) {
+         methodSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %} 

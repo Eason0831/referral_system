@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">我的推荐链接</h2>
+                
+                <div class="text-center mb-4">
+                    <img src="data:image/png;base64,{{ qr_code }}" alt="推荐二维码" class="img-fluid" style="max-width: 200px;">
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">我的推荐码</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ referral_code }}" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
+                            复制
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">推荐链接</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="{{ referral_url }}" readonly>
+                        <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard(this.previousElementSibling)">
+                            复制
+                        </button>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <h5>推荐奖励说明：</h5>
+                    <ul class="mb-0">
+                        <li>直接推荐用户消费可获得1%的佣金</li>
+                        <li>间接推荐用户（二级）消费可获得0.5%的佣金</li>
+                        <li>间接推荐用户（三级）消费可获得0.25%的佣金</li>
+                        <li>新用户首次消费可获得优惠券奖励</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(element) {
+    element.select();
+    document.execCommand('copy');
+    
+    // 显示复制成功提示
+    const originalText = element.nextElementSibling.innerText;
+    element.nextElementSibling.innerText = '已复制';
+    setTimeout(() => {
+        element.nextElementSibling.innerText = originalText;
+    }, 2000);
+}
+</script>
+{% endblock %} 

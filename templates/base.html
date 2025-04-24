@@ -1,0 +1,2030 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全聚德推荐系统</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.28/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f9f9ea;
+            margin: 0;
+            padding: 0;
+        }
+        .bg-custom {
+            background-color: #f9f9ea !important;
+        }
+        .card, .modal-content, .dropdown-menu, .toast {
+            background-color: #f9f9ea !important;
+        }
+        /* 自定义badge背景色 */
+        .badge.bg-primary, .badge.bg-secondary, .badge.bg-success, 
+        .badge.bg-warning, .badge.bg-info, .badge.bg-light {
+            background-color: #f9f9ea !important;
+            color: #333 !important;
+            border: 1px solid;
+        }
+        .badge.bg-primary {
+            border-color: #0d6efd;
+        }
+        .badge.bg-secondary {
+            border-color: #6c757d;
+        }
+        .badge.bg-success {
+            border-color: #28a745;
+        }
+        .badge.bg-warning {
+            border-color: #ffc107;
+        }
+        .badge.bg-info {
+            border-color: #17a2b8;
+        }
+        .badge.bg-light {
+            border-color: #f8f9fa;
+        }
+        .navbar-brand img {
+            height: 40px;
+        }
+        .qr-code {
+            max-width: 200px;
+            margin: 0 auto;
+        }
+        /* 调整固定导航栏的样式，防止遮挡 */
+        .navbar-fixed-top {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        
+        /* 优化页面内容区域的顶部内边距 */
+        .content-wrapper {
+            padding-top: 0 !important;
+            margin-top: 0 !important; 
+        }
+        
+        /* 管理页面特殊处理 */
+        .admin-content {
+            margin-top: 20px; /* 减小管理页面的额外顶部边距 */
+        }
+        
+        /* 语言切换按钮样式 */
+        .language-switch {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+        
+        .language-switch button {
+            min-width: 70px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .language-switch button.zh-active #current-lang::before {
+            content: "● ";
+            color: #fff;
+        }
+        
+        .language-switch button.en-active #current-lang::after {
+            content: " ●";
+            color: #fff;
+        }
+        
+        /* 减少首页顶部空白 */
+        .navbar {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            margin: 0;
+            padding: 0.5rem 1rem;
+            height: 56px;
+        }
+        
+        /* 确保内容不被导航栏遮挡 */
+        .content-wrapper {
+            padding-top: 56px !important;
+            margin-top: 0 !important;
+        }
+        
+        /* 首页特殊处理 */
+        body.index-page .content-wrapper {
+            padding-top: 0 !important;
+        }
+        
+        body {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        
+        .language-switch {
+            margin-right: 10px;
+        }
+        
+        #language-toggle {
+            font-size: 0.9rem;
+            padding: 0.25rem 0.75rem;
+            background-color: transparent;
+            border: 1px solid rgba(255,255,255,0.5);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        #language-toggle:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .toast-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+        
+        .toast-message.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 导航栏下拉菜单样式调整 */
+        .dropdown-menu {
+            background-color: #343a40 !important;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .dropdown-item {
+            color: #fff !important;
+        }
+
+        .dropdown-item:hover, .dropdown-item:focus {
+            background-color: rgba(255,255,255,0.1) !important;
+        }
+
+        /* 确保管理菜单总是可见 */
+        .navbar .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        
+        /* Navbar Logo Centering */
+        .navbar-brand {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        /* --- 新增: 首页 Banner 文字向右移动 --- */
+        .index-page .carousel-overlay .container .carousel-title,
+        .index-page .carousel-overlay .container .carousel-text {
+            /* margin-left: 30px; */
+            text-align: center; /* 改为居中 */
+            /* position: relative; */
+            /* --- 新增: 使段落块也居中 --- */
+            margin-left: auto;
+            margin-right: auto;
+            /* 保留最大宽度限制 */
+             /* max-width: 80%; */ /* 可以取消或调整这个限制 */
+        }
+        /* --- 结束新增 --- */
+
+        /* --- 新增: 首页 Banner 内按钮居中 --- */
+        .index-page .carousel-overlay .container {
+            text-align: center; /* 使内部的 inline-block 元素（如按钮）居中 */
+        }
+        /* --- 结束新增 --- */
+
+        /* --- 新增: 首页 Banner 按钮下移 --- */
+        .index-page .carousel-overlay .container .gold-btn {
+            margin-top: 13rem; /* 增加顶部外边距，将按钮向下推。可调整此值 */
+        }
+        /* --- 结束新增 --- */
+    </style>
+</head>
+<body{% if request.path == '/' or 'index' in request.path %} class="index-page"{% endif %}>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" height="40">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- "首页" Link moved from here -->
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">仪表盘</a>
+                    </li>
+                    <!-- 管理员导航项 -->
+                    {% if current_user.is_admin %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            管理
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                            <li><a class="dropdown-item" href="/admin">管理面板</a></li>
+                            <li><a class="dropdown-item" href="/admin/withdrawals">提现管理</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav"> <!-- --- 移除 mx-auto --- -->
+                    <!-- "首页" Link moved here -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">登出</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">登录</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register">注册</a>
+                    </li>
+                    {% endif %}
+                    
+                    <!-- 使用单个语言切换按钮 -->
+                    <li class="nav-item">
+                        <div class="language-switch">
+                            <button id="language-toggle" class="btn btn-sm btn-outline-light rounded-pill">
+                                <span id="current-language">中文</span>
+                                <i class="bi bi-translate ms-1"></i>
+                            </button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区 -->
+    <div class="content-wrapper">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info">
+                    <ul class="list-unstyled">
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-3">
+                    <h5 data-translate="全聚德推荐系统">全聚德推荐系统</h5>
+                    <p data-translate="与朋友分享美食体验，同时获得丰厚奖励">与朋友分享美食体验，同时获得丰厚奖励</p>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <h5 data-translate="快速链接">快速链接</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('index') }}" class="text-white" data-translate="首页">首页</a></li>
+                        <li><a href="{{ url_for('login') }}" class="text-white" data-translate="登录">登录</a></li>
+                        <li><a href="{{ url_for('register') }}" class="text-white" data-translate="注册">注册</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <h5 data-translate="关于我们">关于我们</h5>
+                    <div class="social-icons">
+                        <a href="#" class="text-white me-2"><i class="fab fa-weixin" aria-hidden="true"></i></a>
+                        <a href="#" class="text-white me-2"><i class="fab fa-weibo" aria-hidden="true"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-tiktok" aria-hidden="true"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-center">
+                    <p class="mb-0"><small data-translate="© 2025 全聚德推荐系统 版权所有">© 2025 全聚德推荐系统 版权所有</small></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery FIRST -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- Bootstrap Bundle with Popper (depends on jQuery for some components) -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.28/dist/sweetalert2.all.min.js"></script>
+    
+    <!-- 语言切换功能 -->
+    <script>
+        // 翻译数据
+        const translations = {
+            'zh': {
+                // 导航栏
+                'navbar.dashboard': '仪表盘',
+                'navbar.referral_link': '我的推荐链接',
+                'navbar.admin': '管理后台',
+                'navbar.withdrawal_management': '提现管理',
+                'navbar.logout': '登出',
+                'navbar.login': '登录',
+                'navbar.register': '注册',
+                'navbar.brand': '全聚德推荐系统',
+                
+                // 首页
+                'home.welcome': '欢迎加入全聚德推荐计划',
+                'home.invite_friends': '邀请朋友，一起品尝美食，同时获得丰厚奖励',
+                'home.multilevel': '多层级推荐系统',
+                'home.indirect_rewards': '不仅获得直接推荐奖励，间接推荐同样带来收益',
+                'home.exclusive_coupons': '专属优惠券',
+                'home.share_experience': '获得独家折扣，与好友分享美食体验',
+                'home.system_title': '全聚德推荐系统',
+                'home.system_intro': '欢迎来到全聚德推荐系统！通过邀请朋友享用美食，您可以获得丰厚奖励。',
+                'home.welcome_back': '欢迎回来，',
+                'home.check_data': '查看您的最新推荐数据和佣金收益',
+                'home.enter_dashboard': '进入仪表盘',
+                'home.new_user': '新用户？',
+                'home.join_us': '加入我们的推荐计划，开始赚取奖励',
+                'home.register_now': '立即注册',
+                'home.have_account': '已有账号？',
+                'home.check_status': '登录查看您的推荐状态和收益',
+                'home.login_now': '立即登录',
+                'home.features': '我们的推荐系统特色',
+                'home.share_link': '分享链接',
+                'home.share_description': '获取您的专属推荐链接，通过社交媒体、微信或直接分享给朋友',
+                'home.multilevel_commission': '多层级佣金',
+                'home.commission_description': '不仅可以从直接推荐获得奖励，间接推荐同样能为您带来收益',
+                'home.flexible_withdrawal': '灵活提现',
+                'home.withdrawal_description': '多种提现方式，包括支付宝、微信和电子转账，快速获取您的奖励',
+                'home.contact_us': '联系我们',
+                'home.vancouver': '温哥华',
+                'home.newyork': '纽约',
+                'home.opening_soon': '即将开业',
+                'home.general_inquiries': '一般咨询，信息与预约:',
+                'home.vip_events': 'VIP/活动：',
+                'home.footer_description': '与朋友分享美食体验，同时获得丰厚奖励',
+                'home.quick_links': '快速链接',
+                'home.home': '首页',
+                'home.follow_us': '关注我们',
+                'home.copyright': '版权所有',
+                'home.prev': '上一个',
+                'home.next': '下一个',
+                
+                // 管理界面和其他子页面
+                'admin.title': '管理后台',
+                'admin.users': '用户管理',
+                'admin.transactions': '交易记录',
+                'admin.coupons': '优惠券管理',
+                'admin.withdrawal': '提现管理',
+                'admin.add_coupon': '添加优惠券',
+                'admin.add_recharge': '添加充值金额',
+                'admin.add_user': '添加用户',
+                'admin.coupon_name': '优惠券名称',
+                'admin.coupon_description': '优惠券描述',
+                'admin.coupon_value': '优惠券价值',
+                'admin.coupon_type': '优惠券类型',
+                'admin.coupon_expiry': '过期日期',
+                'admin.save': '保存',
+                'admin.edit': '编辑',
+                'admin.delete': '删除',
+                'admin.status': '状态',
+                'admin.active': '激活',
+                'admin.inactive': '停用',
+                'admin.approve': '批准',
+                'admin.reject': '拒绝',
+                'admin.pending': '待处理',
+                'admin.approved': '已批准',
+                'admin.rejected': '已拒绝',
+                'admin.confirm': '确认',
+                'admin.cancel': '取消',
+                
+                // 提现管理页面
+                'withdrawal.title': '提现申请管理',
+                'withdrawal.id': 'ID',
+                'withdrawal.user': '用户',
+                'withdrawal.amount': '金额 (CAD$)',
+                'withdrawal.method': '方式',
+                'withdrawal.details': '详细信息',
+                'withdrawal.status': '状态',
+                'withdrawal.request_time': '申请时间',
+                'withdrawal.process_time': '处理时间',
+                'withdrawal.actions': '操作',
+                'withdrawal.alipay': '支付宝',
+                'withdrawal.wechat': '微信',
+                'withdrawal.emt': 'EMT',
+                'withdrawal.member_account': '会员账户',
+                'withdrawal.account': '账号',
+                'withdrawal.phone': '电话',
+                'withdrawal.wechat_id': '微信ID',
+                'withdrawal.bank': '银行',
+                'withdrawal.email': '邮箱',
+                'withdrawal.name': '姓名',
+                'withdrawal.member_phone': '会员手机',
+                'withdrawal.member_name': '会员姓名',
+                'withdrawal.pending': '处理中',
+                'withdrawal.approved': '已提现',
+                'withdrawal.rejected': '已拒绝',
+                'withdrawal.complete': '完成',
+                'withdrawal.reject': '拒绝',
+                'withdrawal.operation_success': '操作成功！',
+                'withdrawal.confirm_complete': '确定要完成这笔提现申请吗？',
+                'withdrawal.confirm_reject': '确定要拒绝这笔提现申请吗？',
+                'withdrawal.server_error': '服务器错误',
+                'withdrawal.operation_failed': '操作失败！',
+                'withdrawal.request_error': '请求处理时发生错误',
+                
+                // 仪表盘
+                'dashboard.title': '用户仪表盘',
+                'dashboard.welcome': '欢迎',
+                'dashboard.your_stats': '您的统计数据',
+                'dashboard.referrals': '推荐数',
+                'dashboard.earnings': '收益',
+                'dashboard.commissions': '佣金',
+                'dashboard.direct': '直接',
+                'dashboard.indirect': '间接',
+                'dashboard.total': '总计',
+                'dashboard.withdrawal': '提现',
+                'dashboard.your_referrals': '您的推荐',
+                'dashboard.level': '级别',
+                'dashboard.username': '用户名',
+                'dashboard.date': '日期',
+                'dashboard.amount': '金额',
+                'dashboard.method': '方式',
+                'dashboard.no_data': '暂无数据',
+                'dashboard.my_dashboard': '我的仪表板',
+                'dashboard.available_balance': '可提现余额',
+                'dashboard.commission_rates': '佣金比率',
+                'dashboard.tier': '层级',
+                'dashboard.rate': '比率',
+                'dashboard.tier_1': '第1级',
+                'dashboard.tier_2': '第2级',
+                'dashboard.tier_3': '第3级',
+                'dashboard.tier_4': '第4级',
+                'dashboard.tier_5': '第5级',
+                'dashboard.referral_stats': '推荐用户统计',
+                'dashboard.tier_1_referrals': '第1级推荐',
+                'dashboard.tier_2_referrals': '第2级推荐',
+                'dashboard.tier_3_referrals': '第3级推荐',
+                'dashboard.tier_4_referrals': '第4级推荐',
+                'dashboard.tier_5_referrals': '第5级推荐',
+                'dashboard.people': '人',
+                'dashboard.commission': '佣金',
+                'dashboard.my_coupons': '我的优惠券',
+                'dashboard.valid': '有效',
+                'dashboard.invalid': '无效',
+                'dashboard.expired': '已过期',
+                'dashboard.dine_in_only': '仅限堂食',
+                'dashboard.type': '类型',
+                'dashboard.obtain_time': '获得时间',
+                'dashboard.expiry_time': '过期时间',
+                'dashboard.withdrawal_records': '提现记录',
+                'dashboard.account_info': '账户信息',
+                'dashboard.application_time': '申请时间',
+                'dashboard.processing_time': '处理时间',
+                'dashboard.status': '状态',
+                'dashboard.no_withdrawal_records': '暂无提现记录',
+                'dashboard.recharge_records': '充值记录',
+                'dashboard.serial_number': '序号',
+                'dashboard.recharge_amount': '充值金额',
+                'dashboard.recharge_time': '充值时间',
+                'dashboard.no_recharge_records': '暂无充值记录',
+                'dashboard.available_balance_text': '可提现余额: ',
+                'dashboard.tier_level': '第{level}级',
+                'dashboard.registration_time': '注册时间',
+                'dashboard.total_spent': '总消费金额',
+                'dashboard.contributed_commission': '贡献佣金',
+                'dashboard.coupon_type': '类型：',
+                'dashboard.use_time': '使用时间：',
+                'dashboard.view_code': '查看兑换码',
+                'dashboard.no_users': '该层级暂无用户',
+                
+                // 登录页面
+                'login.title': '用户登录',
+                'login.username': '用户名',
+                'login.password': '密码',
+                'login.submit': '登录',
+                'login.no_account': '还没有账号？',
+                'login.register_now': '立即注册',
+                
+                // 注册页面
+                'register.title': '注册新账号',
+                'register.username': '用户名',
+                'register.email': '电子邮箱',
+                'register.phone': '手机号码',
+                'register.phone_hint': '请输入10位数字手机号码（不含国家代码）',
+                'register.password': '密码',
+                'register.referral_code': '推荐码（可选）',
+                'register.submit': '注册',
+                'register.have_account': '已有账号？',
+                'register.login_now': '立即登录',
+                
+                // 推荐链接页面
+                'referral.title': '我的推荐链接',
+                'referral.description': '分享您的专属推荐链接，邀请朋友加入',
+                'referral.your_link': '您的推荐链接',
+                'referral.copy': '复制链接',
+                'referral.copied': '已复制到剪贴板！',
+                'referral.share_wechat': '通过微信分享',
+                'referral.scan_qrcode': '扫描二维码分享',
+                'referral.commission_rules': '佣金规则',
+                'referral.first_level': '一级推荐',
+                'referral.second_level': '二级推荐',
+                'referral.third_level': '三级推荐',
+                'referral.fourth_level': '四级推荐',
+                'referral.fifth_level': '五级推荐',
+                'referral.of_consumption': '消费金额的',
+                'referral.stats': '推荐统计',
+                'referral.total_referrals': '总推荐人数',
+                'referral.total_commission': '总佣金收入',
+                'referral.referral_history': '推荐历史',
+                'referral.no_referrals': '暂无推荐记录',
+                'referral.username': '用户名',
+                'referral.register_time': '注册时间',
+                'referral.level': '级别',
+                'referral.commission': '佣金',
+                '特色简介': '特色简介',
+                '正宗烤鸭': '正宗烤鸭',
+                '传承百年工艺，采用独特配方和烤制技术，带来最地道的北京烤鸭': '传承百年工艺，采用独特配方和烤制技术，带来最地道的北京烤鸭',
+                '推荐奖励': '推荐奖励',
+                '邀请好友注册并消费，双方均可获得奖励，推荐越多，奖励越多': '邀请好友注册并消费，双方均可获得奖励，推荐越多，奖励越多',
+                '全球连锁': '全球连锁',
+                '在世界多个城市开设连锁店，让您随时随地都能品尝正宗全聚德': '在世界多个城市开设连锁店，让您随时随地都能品尝正宗全聚德',
+                '立即加入全聚德推荐系统': '立即加入全聚德推荐系统',
+                '注册成为会员，获取专属推荐链接，邀请好友一起品尝全聚德美食，同时享受丰厚奖励': '注册成为会员，获取专属推荐链接，邀请好友一起品尝全聚德美食，同时享受丰厚奖励',
+                '进入仪表盘': '进入仪表盘',
+                '立即注册': '立即注册',
+                '全球门店信息': '全球门店信息',
+                '地址': '地址',
+                '联系方式': '联系方式',
+                '预约及咨询': '预约及咨询',
+                '电话': '电话',
+                '邮箱': '邮箱',
+                'VIP/活动咨询': 'VIP/活动咨询',
+                '营业时间': '营业时间',
+                '温哥华店': '温哥华店',
+                '纽约店': '纽约店',
+                '体验正宗北京风味，尽在温哥华全聚德': '体验正宗北京风味，尽在温哥华全聚德',
+                '传承百年烤鸭技艺，纽约盛大开业': '传承百年烤鸭技艺，纽约盛大开业',
+                '访问官网': '访问官网',
+                '全聚德百年烤鸭': '全聚德百年烤鸭',
+                '传承百年的精湛技艺，带给您最正宗的北京烤鸭体验': '传承百年的精湛技艺，带给您最正宗的北京烤鸭体验',
+                '分享美食 获得奖励': '分享美食 获得奖励',
+                '邀请好友体验全聚德美食，享受丰厚返现奖励': '邀请好友体验全聚德美食，享受丰厚返现奖励',
+                '全球连锁 正宗美味': '全球连锁 正宗美味',
+                '温哥华、纽约分店盛大开业，正宗中国味道等您来品': '温哥华、纽约分店盛大开业，正宗中国味道等您来品',
+                '开始推荐': '开始推荐',
+                '查看门店': '查看门店',
+                '用户统计': '用户统计',
+                '处理中': 'Processing',
+                '已提现': 'Completed',
+                '已拒绝': 'Rejected',
+                '账号': 'Account',
+                '电话': 'Phone',
+                '微信ID': 'WeChat ID',
+                '银行': 'Bank',
+                '邮箱': 'Email',
+                '姓名': 'Name',
+                '会员手机': 'Member Phone',
+                '会员姓名': 'Member Name',
+                '提现申请管理': 'Withdrawal Management',
+                '支付宝': 'Alipay',
+                '微信': 'WeChat',
+                '会员账户': 'Member Account',
+                '完成': 'Complete',
+                '拒绝': 'Reject',
+                '操作成功！': 'Operation successful!',
+                '确定要 完成 这笔提现申请吗？': 'Are you sure you want to complete this withdrawal request?',
+                '确定要 拒绝 这笔提现申请吗？': 'Are you sure you want to reject this withdrawal request?',
+                '服务器错误': 'Server error',
+                '请求处理时发生错误': 'An error occurred during request processing',
+                '提现处理请求失败': 'Withdrawal processing request failed',
+                '操作失败': 'Operation failed',
+                '待处理': 'Pending',
+                '已通过': 'Approved',
+                '已拒绝': 'Rejected',
+                '层级': 'Tier',
+                '比率': 'Rate',
+                '第1级': 'Tier 1',
+                '第2级': 'Tier 2',
+                '第3级': 'Tier 3',
+                '佣金': 'Commission',
+                '总佣金收入': 'Total Commission Income',
+                '可提现余额': 'Available Balance',
+                '申请提现': 'Request Withdrawal',
+                '我的推荐链接': 'My Referral Link',
+                '推荐用户统计': 'Referral User Statistics',
+                '暂无佣金配置': 'No commission configuration',
+                '用户仪表盘': 'User Dashboard',
+                '欢迎': 'Welcome',
+                '您的推荐链接': 'Your Referral Link',
+                '复制': 'Copy',
+                '总用户数': 'Total Users',
+                '今日注册': 'Today\'s Registrations',
+                '总佣金支付': 'Total Commission Payments',
+                '待处理提现': 'Pending Withdrawals',
+                '用户管理': 'User Management',
+                '用户名': 'Username',
+                '注册日期': 'Registration Date',
+                '推荐人': 'Referrer',
+                '佣金余额': 'Commission Balance',
+                '查看': 'View',
+                '最近提现申请': 'Recent Withdrawal Requests',
+                '管理': 'Manage',
+                '我的优惠券': 'My Coupons',
+                '已使用': 'Used',
+                '已过期': 'Expired',
+                '有效': 'Valid',
+                '类型': 'Type',
+                '获得时间': 'Received Time',
+                '过期时间': 'Expiration Time',
+                '使用时间': 'Used Time',
+                '查看兑换码': 'View Redemption Code',
+                '暂无优惠券': 'No coupons',
+                '提现记录': 'Withdrawal Records',
+                '提现方式': 'Withdrawal Method',
+                '账户信息': 'Account Information',
+                '暂无提现记录': 'No withdrawal records',
+                '充值记录': 'Recharge Records',
+                '序号': 'ID',
+                '充值金额': 'Recharge Amount',
+                '充值时间': 'Recharge Time',
+                '暂无充值记录': 'No recharge records',
+                '您的优惠券兑换码': 'Your Coupon Redemption Code',
+                '请在结账时向服务员出示此代码': 'Please show this code to the waiter when checking out',
+                '一经使用，优惠券将自动失效': 'Once used, the coupon will automatically expire',
+                '确定': 'Confirm',
+                '商家可通过管理后台验证此兑换码': 'Merchants can verify this redemption code through the admin panel',
+                '人': 'People',
+                '仪表盘': '仪表盘',
+                '登出': '登出',
+                '登录': '登录',
+                '注册': '注册',
+                '首页': '首页',
+                '快速链接': '快速链接',
+                '关于我们': '关于我们',
+                '全聚德推荐系统': '全聚德推荐系统',
+                '与朋友分享美食体验，同时获得丰厚奖励': '与朋友分享美食体验，同时获得丰厚奖励',
+                '© 2025 全聚德推荐系统 版权所有': '© 2025 全聚德推荐系统 版权所有',
+                '直接推荐': '直接推荐',
+                '间接推荐': '间接推荐',
+                '总推荐人数': '总推荐人数',
+                
+                // 店铺信息相关术语
+                '地址': '地址',
+                '营业时间': '营业时间',
+                '预约及咨询': '预约及咨询',
+                '电话': '电话',
+                '邮箱': '邮箱',
+                'VIP/活动咨询': 'VIP/活动咨询',
+                '联系方式': '联系方式',
+                'Opening Soon': '即将开业',
+                'Mon – Sun 11:00 – 22:30': 'Mon – Sun 11:00 – 22:30',
+                '上一张': '上一张',
+                '下一张': '下一张',
+                
+                // 首页特殊文本
+                'NEW YORK': '纽约',
+                'VANCOUVER': '温哥华',
+                'GENERAL INQUIRIES, INFORMATION & APPOINTMENTS:': '预约及咨询:',
+                'VIP/ Events:': 'VIP/活动咨询:',
+                
+                // 各种小标签和提示
+                '暂无数据': '暂无数据',
+                '更多信息': '更多信息',
+                '了解更多': '了解更多',
+                '返回': '返回',
+                '提交': '提交',
+                '搜索': '搜索',
+                '上传': '上传',
+                '下载': '下载',
+                '分享': '分享',
+                '操作': '操作',
+                
+                // 管理员页面
+                '用户统计': '用户统计',
+                '总注册用户数': '总注册用户数',
+                '交易统计': '交易统计',
+                '总交易金额': '总交易金额',
+                '今日消费额': '今日消费额',
+                '当日充值总金额': '当日充值总金额',
+                '优惠券统计': '优惠券统计',
+                '已发放优惠券数': '已发放优惠券数',
+                '优惠券类型统计': '优惠券类型统计',
+                '类型': '类型',
+                '总数': '总数',
+                '暂无优惠券类型数据': '暂无优惠券类型数据',
+                '推荐人数排行榜': '推荐人数排行榜',
+                '排名': '排名',
+                '暂无推荐记录': '暂无推荐记录',
+                '用户管理': '用户管理',
+                '搜索用户名/邮箱/手机号': '搜索用户名/邮箱/手机号',
+                '推荐码': '推荐码',
+                '推荐层级': '推荐层级',
+                '无推荐人': '无推荐人',
+                '未知推荐人': '未知推荐人',
+                '路径': '路径',
+                '充值记录管理': '充值记录管理',
+                '添加充值记录': '添加充值记录',
+                '优惠券管理': '优惠券管理',
+                '验证优惠券': '验证优惠券',
+                '添加优惠券': '添加优惠券',
+                '名称': '名称',
+                '所属用户': '所属用户',
+                '创建时间': '创建时间',
+                '永不过期': '永不过期',
+                '修改过期日期': '修改过期日期',
+                '删除': '删除',
+                '请选择用户': '请选择用户',
+                '取消': '取消',
+                '添加': '添加',
+                '菜品': '菜品',
+                '饮品': '饮品',
+                '烤鸭': '烤鸭',
+                '留空表示永不过期': '留空表示永不过期',
+                '分配给用户（可选）': '分配给用户（可选）',
+                '-- 不分配给特定用户 --': '-- 不分配给特定用户 --',
+                '如果选择用户，优惠券将直接分配给该用户。否则，优惠券将添加到系统中供后续分配。': '如果选择用户，优惠券将直接分配给该用户。否则，优惠券将添加到系统中供后续分配。',
+                '输入兑换码': '输入兑换码',
+                '格式: CP-XXXX-XXXX-XXXX': '格式: CP-XXXX-XXXX-XXXX',
+                '验证': '验证',
+                '关闭': '关闭',
+                '验证成功！': '验证成功！',
+                '优惠券详情：': '优惠券详情：',
+                '所属用户：': '所属用户：',
+                '领取时间：': '领取时间：',
+                '状态：': '状态：',
+                '使用时间：': '使用时间：',
+                '标记为已使用': '标记为已使用',
+                '验证失败': '验证失败',
+                '无效的兑换码': '无效的兑换码',
+                '用户详细信息': '用户详细信息',
+                '基本信息': '基本信息',
+                '推荐信息': '推荐信息',
+                '充值记录': '充值记录',
+                '佣金记录': '佣金记录',
+                '优惠券': '优惠券',
+                '手机号': '手机号',
+                '可用余额': '可用余额',
+                '可用余额 (CAD)': '可用余额 (CAD)',
+                '推荐等级': '推荐等级',
+                '推荐码': '推荐码',
+                '推荐人': '推荐人',
+                '佣金余额': '佣金余额',
+                '佣金余额 (CAD)': '佣金余额 (CAD)',
+                '暂无推荐用户': '暂无推荐用户',
+                '暂无充值记录': '暂无充值记录',
+                '总充值金额:': '总充值金额:',
+                '来源用户': '来源用户',
+                '暂无佣金记录': '暂无佣金记录',
+                '暂无优惠券': '暂无优惠券',
+                '总佣金 (CAD)': '总佣金 (CAD)',
+                '直接推荐': '直接推荐',
+                '间接推荐': '间接推荐',
+                '注册时间': '注册时间',
+                '无': '无',
+                '加载中...': '加载中...',
+                '关闭': '关闭',
+                
+                // 特殊修正
+                '金额 (CAD)': '金额 (CAD)',
+                '创建时间': '创建时间',
+                '价值 (CAD)': '价值 (CAD)',
+                
+                // 后台相关操作和提示
+                '获取用户信息失败': '获取用户信息失败',
+                '服务器错误，请稍后再试': '服务器错误，请稍后再试',
+                '用户信息更新成功': '用户信息更新成功',
+                '更新失败': '更新失败',
+                '更新失败，请重试': '更新失败，请重试',
+                '确定要删除这个优惠券吗？': '确定要删除这个优惠券吗？',
+                '此操作不可撤销！': '此操作不可撤销！',
+                '是的，删除它': '是的，删除它',
+                '已删除': '已删除',
+                '优惠券已成功删除': '优惠券已成功删除',
+                '删除失败': '删除失败',
+                '删除失败，请重试': '删除失败，请重试',
+                '搜索失败': '搜索失败',
+                '没有找到匹配的用户': '没有找到匹配的用户',
+                '编辑': '编辑',
+                '添加成功': '添加成功',
+                '添加失败': '添加失败',
+                '添加失败，请重试': '添加失败，请重试',
+                '请输入优惠券名称': '请输入优惠券名称',
+                '请输入有效的优惠券价值': '请输入有效的优惠券价值',
+                '优惠券添加成功': '优惠券添加成功',
+                '请输入优惠券兑换码': '请输入优惠券兑换码',
+                '确定要标记此优惠券为已使用状态吗？此操作不可撤销。': '确定要标记此优惠券为已使用状态吗？此操作不可撤销。',
+                '优惠券已成功标记为已使用': '优惠券已成功标记为已使用',
+                '操作失败': '操作失败',
+                '操作失败，请重试': '操作失败，请重试',
+                '确定要禁用这个优惠券吗？': '确定要禁用这个优惠券吗？',
+                '确定要启用这个优惠券吗？': '确定要启用这个优惠券吗？',
+                '优惠券已禁用': '优惠券已禁用',
+                '优惠券已启用': '优惠券已启用',
+                '禁用失败': '禁用失败',
+                '启用失败': '启用失败',
+                '禁用失败，请重试': '禁用失败，请重试',
+                '启用失败，请重试': '启用失败，请重试',
+                '修改过期日期': '修改过期日期',
+                '选择新的过期日期': '选择新的过期日期',
+                '保存': '保存',
+                '成功': '成功',
+                '过期日期已更新': '过期日期已更新',
+                '错误': '错误',
+                '更新失败': '更新失败',
+                '更新失败，请重试': '更新失败，请重试',
+                '确定要删除这个优惠券吗？': '确定要删除这个优惠券吗？',
+                '此操作不可撤销！': '此操作不可撤销！',
+                '是的，删除它': '是的，删除它',
+                '已删除': '已删除',
+                '优惠券已成功删除': '优惠券已成功删除',
+                '删除失败': '删除失败',
+                '删除失败，请重试': '删除失败，请重试',
+                '搜索失败': '搜索失败',
+                '服务器错误，请稍后再试': '服务器错误，请稍后再试',
+                '没有找到匹配的用户': '没有找到匹配的用户',
+                '编辑': '编辑',
+                '获取用户信息失败': '获取用户信息失败',
+                '用户信息更新成功': '用户信息更新成功',
+                '更新失败': '更新失败'
+            },
+            'en': {
+                // 导航栏
+                'navbar.dashboard': 'Dashboard',
+                'navbar.referral_link': 'My Referral Link',
+                'navbar.admin': 'Admin Panel',
+                'navbar.withdrawal_management': 'Withdrawal Management',
+                'navbar.logout': 'Logout',
+                'navbar.login': 'Login',
+                'navbar.register': 'Register',
+                'navbar.brand': 'Quanjude Referral System',
+                
+                // 首页
+                'home.welcome': 'Welcome to Quanjude Referral Program',
+                'home.invite_friends': 'Invite friends, enjoy delicious food together, and earn generous rewards',
+                'home.multilevel': 'Multi-level Referral System',
+                'home.indirect_rewards': 'Earn rewards not only from direct referrals but also from indirect referrals',
+                'home.exclusive_coupons': 'Exclusive Coupons',
+                'home.share_experience': 'Get exclusive discounts and share food experiences with friends',
+                'home.system_title': 'Quanjude Referral System',
+                'home.system_intro': 'Welcome to Quanjude Referral System! By inviting friends to enjoy our food, you can earn generous rewards.',
+                'home.welcome_back': 'Welcome back, ',
+                'home.check_data': 'Check your latest referral data and commission earnings',
+                'home.enter_dashboard': 'Enter Dashboard',
+                'home.new_user': 'New User?',
+                'home.join_us': 'Join our referral program and start earning rewards',
+                'home.register_now': 'Register Now',
+                'home.have_account': 'Already have an account?',
+                'home.check_status': 'Login to check your referral status and earnings',
+                'home.login_now': 'Login Now',
+                'home.features': 'Our Referral System Features',
+                'home.share_link': 'Share Links',
+                'home.share_description': 'Get your exclusive referral link and share it through social media, WeChat, or directly with friends',
+                'home.multilevel_commission': 'Multi-level Commission',
+                'home.commission_description': 'Earn rewards not only from direct referrals but also from indirect referrals',
+                'home.flexible_withdrawal': 'Flexible Withdrawal',
+                'home.withdrawal_description': 'Multiple withdrawal methods, including Alipay, WeChat, and electronic transfers, to quickly get your rewards',
+                'home.contact_us': 'Contact Us',
+                'home.vancouver': 'Vancouver',
+                'home.newyork': 'New York',
+                'home.opening_soon': 'Opening Soon',
+                'home.general_inquiries': 'GENERAL INQUIRIES, INFORMATION & APPOINTMENTS:',
+                'home.vip_events': 'VIP/ Events:',
+                'home.footer_description': 'Share food experiences with friends and earn generous rewards',
+                'home.quick_links': 'Quick Links',
+                'home.home': 'Home',
+                'home.follow_us': 'Follow Us',
+                'home.copyright': 'All Rights Reserved',
+                'home.prev': 'Previous',
+                'home.next': 'Next',
+                
+                // 管理界面和其他子页面
+                'admin.title': 'Admin Panel',
+                'admin.users': 'User Management',
+                'admin.transactions': 'Transactions',
+                'admin.coupons': 'Coupon Management',
+                'admin.withdrawal': 'Withdrawal Management',
+                'admin.add_coupon': 'Add Coupon',
+                'admin.add_recharge': 'Add Recharge',
+                'admin.add_user': 'Add User',
+                'admin.coupon_name': 'Coupon Name',
+                'admin.coupon_description': 'Coupon Description',
+                'admin.coupon_value': 'Coupon Value',
+                'admin.coupon_type': 'Coupon Type',
+                'admin.coupon_expiry': 'Expiry Date',
+                'admin.save': 'Save',
+                'admin.edit': 'Edit',
+                'admin.delete': 'Delete',
+                'admin.status': 'Status',
+                'admin.active': 'Active',
+                'admin.inactive': 'Inactive',
+                'admin.approve': 'Approve',
+                'admin.reject': 'Reject',
+                'admin.pending': 'Pending',
+                'admin.approved': 'Approved',
+                'admin.rejected': 'Rejected',
+                'admin.confirm': 'Confirm',
+                'admin.cancel': 'Cancel',
+                
+                // 提现管理页面
+                'withdrawal.title': 'Withdrawal Application Management',
+                'withdrawal.id': 'ID',
+                'withdrawal.user': 'User',
+                'withdrawal.amount': 'Amount (CAD$)',
+                'withdrawal.method': 'Method',
+                'withdrawal.details': 'Details',
+                'withdrawal.status': 'Status',
+                'withdrawal.request_time': 'Request Time',
+                'withdrawal.process_time': 'Processing Time',
+                'withdrawal.actions': 'Actions',
+                'withdrawal.alipay': 'Alipay',
+                'withdrawal.wechat': 'WeChat',
+                'withdrawal.emt': 'EMT',
+                'withdrawal.member_account': 'Member Account',
+                'withdrawal.account': 'Account',
+                'withdrawal.phone': 'Phone',
+                'withdrawal.wechat_id': 'WeChat ID',
+                'withdrawal.bank': 'Bank',
+                'withdrawal.email': 'Email',
+                'withdrawal.name': 'Name',
+                'withdrawal.member_phone': 'Member Phone',
+                'withdrawal.member_name': 'Member Name',
+                'withdrawal.pending': 'Processing',
+                'withdrawal.approved': 'Withdrawn',
+                'withdrawal.rejected': 'Rejected',
+                'withdrawal.complete': 'Completed',
+                'withdrawal.reject': 'Reject',
+                'withdrawal.operation_success': 'Operation Successful!',
+                'withdrawal.confirm_complete': 'Are you sure you want to complete this withdrawal request?',
+                'withdrawal.confirm_reject': 'Are you sure you want to reject this withdrawal request?',
+                'withdrawal.server_error': 'Server Error',
+                'withdrawal.operation_failed': 'Operation Failed!',
+                'withdrawal.request_error': 'An error occurred while processing the request',
+                
+                // 仪表盘
+                'dashboard.title': 'User Dashboard',
+                'dashboard.welcome': 'Welcome',
+                'dashboard.your_stats': 'Your Statistics',
+                'dashboard.referrals': 'Referrals',
+                'dashboard.earnings': 'Earnings',
+                'dashboard.commissions': 'Commissions',
+                'dashboard.direct': 'Direct',
+                'dashboard.indirect': 'Indirect',
+                'dashboard.total': 'Total',
+                'dashboard.withdrawal': 'Withdrawal',
+                'dashboard.your_referrals': 'Your Referrals',
+                'dashboard.level': 'Level',
+                'dashboard.username': 'Username',
+                'dashboard.date': 'Date',
+                'dashboard.amount': 'Amount',
+                'dashboard.method': 'Method',
+                'dashboard.no_data': 'No Data',
+                'dashboard.my_dashboard': 'My Dashboard',
+                'dashboard.available_balance': 'Available Balance',
+                'dashboard.commission_rates': 'Commission Rates',
+                'dashboard.tier': 'Tier',
+                'dashboard.rate': 'Rate',
+                'dashboard.tier_1': 'Tier 1',
+                'dashboard.tier_2': 'Tier 2',
+                'dashboard.tier_3': 'Tier 3',
+                'dashboard.tier_4': 'Tier 4',
+                'dashboard.tier_5': 'Tier 5',
+                'dashboard.referral_stats': 'Referral Stats',
+                'dashboard.tier_1_referrals': 'Tier 1 Referrals',
+                'dashboard.tier_2_referrals': 'Tier 2 Referrals',
+                'dashboard.tier_3_referrals': 'Tier 3 Referrals',
+                'dashboard.tier_4_referrals': 'Tier 4 Referrals',
+                'dashboard.tier_5_referrals': 'Tier 5 Referrals',
+                'dashboard.people': 'People',
+                'dashboard.commission': 'Commission',
+                'dashboard.my_coupons': 'My Coupons',
+                'dashboard.valid': 'Valid',
+                'dashboard.invalid': 'Invalid',
+                'dashboard.expired': 'Expired',
+                'dashboard.dine_in_only': 'Dine-in Only',
+                'dashboard.type': 'Type',
+                'dashboard.obtain_time': 'Obtained on',
+                'dashboard.expiry_time': 'Expires on',
+                'dashboard.withdrawal_records': 'Withdrawal Records',
+                'dashboard.account_info': 'Account Info',
+                'dashboard.application_time': 'Application Time',
+                'dashboard.processing_time': 'Processing Time',
+                'dashboard.status': 'Status',
+                'dashboard.no_withdrawal_records': 'No Withdrawal Records',
+                'dashboard.recharge_records': 'Recharge Records',
+                'dashboard.serial_number': 'Serial Number',
+                'dashboard.recharge_amount': 'Recharge Amount',
+                'dashboard.recharge_time': 'Recharge Time',
+                'dashboard.no_recharge_records': 'No Recharge Records',
+                'dashboard.available_balance_text': 'Available Balance: ',
+                'dashboard.tier_level': 'Tier {level}',
+                'dashboard.registration_time': 'Registration Date',
+                'dashboard.total_spent': 'Total Spent',
+                'dashboard.contributed_commission': 'Contributed Commission',
+                'dashboard.coupon_type': 'Type: ',
+                'dashboard.use_time': 'Used on',
+                'dashboard.view_code': 'View Redemption Code',
+                'dashboard.no_users': 'No users at this level',
+                
+                // 登录页面
+                'login.title': 'User Login',
+                'login.username': 'Username',
+                'login.password': 'Password',
+                'login.submit': 'Login',
+                'login.no_account': 'Don\'t have an account?',
+                'login.register_now': 'Register Now',
+                
+                // 注册页面
+                'register.title': 'Register New Account',
+                'register.username': 'Username',
+                'register.email': 'Email',
+                'register.phone': 'Phone Number',
+                'register.phone_hint': 'Please enter a 10-digit mobile number without country code',
+                'register.password': 'Password',
+                'register.referral_code': 'Referral Code (Optional)',
+                'register.submit': 'Register',
+                'register.have_account': 'Already have an account?',
+                'register.login_now': 'Login Now',
+                
+                // 推荐链接页面
+                'referral.title': 'My Referral Link',
+                'referral.description': 'Share your exclusive referral link to invite friends',
+                'referral.your_link': 'Your Referral Link',
+                'referral.copy': 'Copy Link',
+                'referral.copied': 'Copied to clipboard!',
+                'referral.share_wechat': 'Share via WeChat',
+                'referral.scan_qrcode': 'Scan QR code to share',
+                'referral.commission_rules': 'Commission Rules',
+                'referral.first_level': 'First Level Referral',
+                'referral.second_level': 'Second Level Referral',
+                'referral.third_level': 'Third Level Referral',
+                'referral.fourth_level': 'Fourth Level Referral',
+                'referral.fifth_level': 'Fifth Level Referral',
+                'referral.of_consumption': 'of consumption amount',
+                'referral.stats': 'Referral Statistics',
+                'referral.total_referrals': 'Total Referrals',
+                'referral.total_commission': 'Total Commission',
+                'referral.referral_history': 'Referral History',
+                'referral.no_referrals': 'No referral records',
+                'referral.username': 'Username',
+                'referral.register_time': 'Registration Time',
+                'referral.level': 'Level',
+                'referral.commission': 'Commission',
+                '特色简介': 'Featured Highlights',
+                '正宗烤鸭': 'Authentic Peking Duck',
+                '传承百年工艺，采用独特配方和烤制技术，带来最地道的北京烤鸭': 'Inheriting century-old craftsmanship with unique recipes and roasting techniques for the most authentic Peking duck experience',
+                '推荐奖励': 'Referral Rewards',
+                '邀请好友注册并消费，双方均可获得奖励，推荐越多，奖励越多': 'Invite friends to register and dine for mutual rewards - the more referrals, the greater the benefits',
+                '全球连锁': 'Global Chain',
+                '在世界多个城市开设连锁店，让您随时随地都能品尝正宗全聚德': 'With locations in multiple cities worldwide, enjoy authentic Quanjude cuisine wherever you go',
+                '立即加入全聚德推荐系统': 'Join Quanjude Referral Program Today',
+                '注册成为会员，获取专属推荐链接，邀请好友一起品尝全聚德美食，同时享受丰厚奖励': 'Register as a member to get your exclusive referral link, invite friends to enjoy Quanjude cuisine together while earning generous rewards',
+                '进入仪表盘': 'Go to Dashboard',
+                '立即注册': 'Register Now',
+                '全球门店信息': 'Global Locations',
+                '地址': 'Address',
+                '联系方式': 'Contact Information',
+                '预约及咨询': 'Reservations & Inquiries',
+                '电话': 'Tel',
+                '邮箱': 'Email',
+                'VIP/活动咨询': 'VIP/Event Inquiries',
+                '营业时间': 'Hours',
+                '温哥华店': 'Vancouver Location',
+                '纽约店': 'New York Location',
+                '体验正宗北京风味，尽在温哥华全聚德': 'Experience authentic Beijing flavors at Quanjude Vancouver',
+                '传承百年烤鸭技艺，纽约盛大开业': 'Century-old duck roasting craftsmanship, now open in New York',
+                '访问官网': 'Visit Website',
+                '全聚德百年烤鸭': 'Quanjude Century-Old Peking Duck',
+                '传承百年的精湛技艺，带给您最正宗的北京烤鸭体验': 'Inheriting century-old craftsmanship to bring you the most authentic Peking duck experience',
+                '分享美食 获得奖励': 'Share Dining, Earn Rewards',
+                '邀请好友体验全聚德美食，享受丰厚返现奖励': 'Invite friends to experience Quanjude cuisine and enjoy generous cashback rewards',
+                '全球连锁 正宗美味': 'Global Chain, Authentic Taste',
+                '温哥华、纽约分店盛大开业，正宗中国味道等您来品': 'Vancouver and New York locations now open, authentic Chinese flavors await you',
+                '开始推荐': 'Start Referring',
+                '查看门店': 'View Locations',
+                '用户统计': 'User Statistics',
+                '处理中': 'Processing',
+                '已提现': 'Completed',
+                '已拒绝': 'Rejected',
+                '账号': 'Account',
+                '电话': 'Phone',
+                '微信ID': 'WeChat ID',
+                '银行': 'Bank',
+                '邮箱': 'Email',
+                '姓名': 'Name',
+                '会员手机': 'Member Phone',
+                '会员姓名': 'Member Name',
+                '提现申请管理': 'Withdrawal Management',
+                '支付宝': 'Alipay',
+                '微信': 'WeChat',
+                '会员账户': 'Member Account',
+                '完成': 'Complete',
+                '拒绝': 'Reject',
+                '操作成功！': 'Operation successful!',
+                '确定要 完成 这笔提现申请吗？': 'Are you sure you want to complete this withdrawal request?',
+                '确定要 拒绝 这笔提现申请吗？': 'Are you sure you want to reject this withdrawal request?',
+                '服务器错误': 'Server error',
+                '请求处理时发生错误': 'An error occurred during request processing',
+                '提现处理请求失败': 'Withdrawal processing request failed',
+                '操作失败': 'Operation failed',
+                '待处理': 'Pending',
+                '已通过': 'Approved',
+                '已拒绝': 'Rejected',
+                '层级': 'Tier',
+                '比率': 'Rate',
+                '第1级': 'Tier 1',
+                '第2级': 'Tier 2',
+                '第3级': 'Tier 3',
+                '佣金': 'Commission',
+                '总佣金收入': 'Total Commission Income',
+                '可提现余额': 'Available Balance',
+                '申请提现': 'Request Withdrawal',
+                '我的推荐链接': 'My Referral Link',
+                '推荐用户统计': 'Referral User Statistics',
+                '暂无佣金配置': 'No commission configuration',
+                '用户仪表盘': 'User Dashboard',
+                '欢迎': 'Welcome',
+                '您的推荐链接': 'Your Referral Link',
+                '复制': 'Copy',
+                '总用户数': 'Total Users',
+                '今日注册': 'Today\'s Registrations',
+                '总佣金支付': 'Total Commission Payments',
+                '待处理提现': 'Pending Withdrawals',
+                '用户管理': 'User Management',
+                '用户名': 'Username',
+                '注册日期': 'Registration Date',
+                '推荐人': 'Referrer',
+                '佣金余额': 'Commission Balance',
+                '查看': 'View',
+                '最近提现申请': 'Recent Withdrawal Requests',
+                '管理': 'Manage',
+                '我的优惠券': 'My Coupons',
+                '已使用': 'Used',
+                '已过期': 'Expired',
+                '有效': 'Valid',
+                '类型': 'Type',
+                '获得时间': 'Received Time',
+                '过期时间': 'Expiration Time',
+                '使用时间': 'Used Time',
+                '查看兑换码': 'View Redemption Code',
+                '暂无优惠券': 'No coupons',
+                '提现记录': 'Withdrawal Records',
+                '提现方式': 'Withdrawal Method',
+                '账户信息': 'Account Information',
+                '暂无提现记录': 'No withdrawal records',
+                '充值记录': 'Recharge Records',
+                '序号': 'ID',
+                '充值金额': 'Recharge Amount',
+                '充值时间': 'Recharge Time',
+                '暂无充值记录': 'No recharge records',
+                '您的优惠券兑换码': 'Your Coupon Redemption Code',
+                '请在结账时向服务员出示此代码': 'Please show this code to the waiter when checking out',
+                '一经使用，优惠券将自动失效': 'Once used, the coupon will automatically expire',
+                '确定': 'Confirm',
+                '商家可通过管理后台验证此兑换码': 'Merchants can verify this redemption code through the admin panel',
+                '人': 'People',
+                '仪表盘': 'Dashboard',
+                '登出': 'Logout',
+                '登录': 'Login',
+                '注册': 'Register',
+                '首页': 'Home',
+                '快速链接': 'Quick Links',
+                '关于我们': 'About Us',
+                '全聚德推荐系统': 'Quanjude Referral System',
+                '与朋友分享美食体验，同时获得丰厚奖励': 'Share dining experiences with friends while earning rewards',
+                '© 2025 全聚德推荐系统 版权所有': '© 2025 Quanjude Referral System. All Rights Reserved',
+                '直接推荐': 'Direct Referrals',
+                '间接推荐': 'Indirect Referrals',
+                '总推荐人数': 'Total Referrals',
+                
+                // 店铺信息相关术语
+                '地址': 'Address',
+                '营业时间': 'Business Hours',
+                '预约及咨询': 'Reservations & Inquiries',
+                '电话': 'Phone',
+                '邮箱': 'Email',
+                'VIP/活动咨询': 'VIP/Event Inquiries',
+                '联系方式': 'Contact Information',
+                'Opening Soon': 'Opening Soon',
+                'Mon – Sun 11:00 – 22:30': 'Mon – Sun 11:00 – 22:30',
+                '上一张': 'Previous',
+                '下一张': 'Next',
+                
+                // 首页特殊文本
+                'NEW YORK': 'NEW YORK',
+                'VANCOUVER': 'VANCOUVER',
+                'GENERAL INQUIRIES, INFORMATION & APPOINTMENTS:': 'GENERAL INQUIRIES, INFORMATION & APPOINTMENTS:',
+                'VIP/ Events:': 'VIP/ Events:',
+                
+                // 各种小标签和提示
+                '暂无数据': 'No Data',
+                '更多信息': 'More Info',
+                '了解更多': 'Learn More',
+                '返回': 'Back',
+                '提交': 'Submit',
+                '搜索': 'Search',
+                '上传': 'Upload',
+                '下载': 'Download',
+                '分享': 'Share',
+                '操作': 'Actions',
+                
+                // 管理员页面
+                '用户统计': 'User Statistics',
+                '总注册用户数': 'Total Registered Users',
+                '交易统计': 'Transaction Statistics',
+                '总交易金额': 'Total Transaction Amount',
+                '今日消费额': 'Today\'s Consumption',
+                '当日充值总金额': 'Total Recharge Amount Today',
+                '优惠券统计': 'Coupon Statistics',
+                '已发放优惠券数': 'Issued Coupons',
+                '优惠券类型统计': 'Coupon Type Statistics',
+                '类型': 'Type',
+                '总数': 'Total',
+                '暂无优惠券类型数据': 'No coupon type data available',
+                '推荐人数排行榜': 'Referral Ranking',
+                '排名': 'Rank',
+                '暂无推荐记录': 'No referral records',
+                '用户管理': 'User Management',
+                '搜索用户名/邮箱/手机号': 'Search by username/email/phone',
+                '推荐码': 'Referral Code',
+                '推荐层级': 'Referral Level',
+                '无推荐人': 'No Referrer',
+                '未知推荐人': 'Unknown Referrer',
+                '路径': 'Path',
+                '充值记录管理': 'Recharge Record Management',
+                '添加充值记录': 'Add Recharge Record',
+                '优惠券管理': 'Coupon Management',
+                '验证优惠券': 'Verify Coupon',
+                '添加优惠券': 'Add Coupon',
+                '名称': 'Name',
+                '所属用户': 'Owner',
+                '创建时间': 'Creation Time',
+                '永不过期': 'Never Expires',
+                '修改过期日期': 'Modify Expiry Date',
+                '删除': 'Delete',
+                '请选择用户': 'Please Select User',
+                '取消': 'Cancel',
+                '添加': 'Add',
+                '菜品': 'Dish',
+                '饮品': 'Drink',
+                '烤鸭': 'Roast Duck',
+                '留空表示永不过期': 'Leave blank for no expiry',
+                '分配给用户（可选）': 'Assign to User (Optional)',
+                '-- 不分配给特定用户 --': '-- Do not assign to specific user --',
+                '如果选择用户，优惠券将直接分配给该用户。否则，优惠券将添加到系统中供后续分配。': 'If a user is selected, the coupon will be directly assigned to that user. Otherwise, the coupon will be added to the system for later assignment.',
+                '输入兑换码': 'Enter Redemption Code',
+                '格式: CP-XXXX-XXXX-XXXX': 'Format: CP-XXXX-XXXX-XXXX',
+                '验证': 'Verify',
+                '关闭': 'Close',
+                '验证成功！': 'Verification Successful!',
+                '优惠券详情：': 'Coupon Details:',
+                '所属用户：': 'Owner:',
+                '领取时间：': 'Received Time:',
+                '状态：': 'Status:',
+                '使用时间：': 'Used Time:',
+                '标记为已使用': 'Mark as Used',
+                '验证失败': 'Verification Failed',
+                '无效的兑换码': 'Invalid Redemption Code',
+                '用户详细信息': 'User Details',
+                '基本信息': 'Basic Information',
+                '推荐信息': 'Referral Information',
+                '充值记录': 'Recharge Records',
+                '佣金记录': 'Commission Records',
+                '优惠券': 'Coupons',
+                '手机号': 'Phone Number',
+                '可用余额': 'Available Balance',
+                '可用余额 (CAD)': 'Available Balance (CAD)',
+                '推荐等级': 'Referral Level',
+                '推荐码': 'Referral Code',
+                '推荐人': 'Referrer',
+                '佣金余额': 'Commission Balance',
+                '佣金余额 (CAD)': 'Commission Balance (CAD)',
+                '暂无推荐用户': 'No Referred Users',
+                '暂无充值记录': 'No Recharge Records',
+                '总充值金额:': 'Total Recharge Amount:',
+                '来源用户': 'Source User',
+                '暂无佣金记录': 'No Commission Records',
+                '暂无优惠券': 'No Coupons',
+                '总佣金 (CAD)': 'Total Commission (CAD)',
+                '直接推荐': 'Direct Referrals',
+                '间接推荐': 'Indirect Referrals',
+                '注册时间': 'Registration Time',
+                '无': 'None',
+                '加载中...': 'Loading...',
+                '关闭': 'Close',
+                
+                // 特殊修正
+                '金额 (CAD)': 'Amount (CAD)',
+                '创建时间': 'Creation Time',
+                '价值 (CAD)': 'Value (CAD)',
+                
+                // 后台相关操作和提示
+                '获取用户信息失败': 'Failed to get user information',
+                '服务器错误，请稍后再试': 'Server error, please try again later',
+                '用户信息更新成功': 'User information updated successfully',
+                '更新失败': 'Update failed',
+                '更新失败，请重试': 'Update failed, please try again',
+                '确定要删除这个优惠券吗？': 'Are you sure you want to delete this coupon?',
+                '此操作不可撤销！': 'This action cannot be undone!',
+                '是的，删除它': 'Yes, delete it',
+                '已删除': 'Deleted',
+                '优惠券已成功删除': 'Coupon has been successfully deleted',
+                '删除失败': 'Delete failed',
+                '删除失败，请重试': 'Delete failed, please try again',
+                '搜索失败': 'Search failed',
+                '没有找到匹配的用户': 'No matching users found',
+                '编辑': 'Edit',
+                '添加成功': 'Added successfully',
+                '添加失败': 'Add failed',
+                '添加失败，请重试': 'Add failed, please try again',
+                '请输入优惠券名称': 'Please enter a coupon name',
+                '请输入有效的优惠券价值': 'Please enter a valid coupon value',
+                '优惠券添加成功': 'Coupon added successfully',
+                '请输入优惠券兑换码': 'Please enter a coupon redemption code',
+                '确定要标记此优惠券为已使用状态吗？此操作不可撤销。': 'Are you sure you want to mark this coupon as used? This action cannot be undone.',
+                '优惠券已成功标记为已使用': 'Coupon has been successfully marked as used',
+                '操作失败': 'Operation failed',
+                '操作失败，请重试': 'Operation failed, please try again',
+                '确定要禁用这个优惠券吗？': 'Are you sure you want to disable this coupon?',
+                '确定要启用这个优惠券吗？': 'Are you sure you want to enable this coupon?',
+                '优惠券已禁用': 'Coupon has been disabled',
+                '优惠券已启用': 'Coupon has been enabled',
+                '禁用失败': 'Disable failed',
+                '启用失败': 'Enable failed',
+                '禁用失败，请重试': 'Disable failed, please try again',
+                '启用失败，请重试': 'Enable failed, please try again',
+                '修改过期日期': 'Modify Expiry Date',
+                '选择新的过期日期': 'Select a new expiry date',
+                '保存': 'Save',
+                '成功': 'Success',
+                '过期日期已更新': 'Expiry date has been updated',
+                '错误': 'Error',
+                '更新失败': 'Update failed',
+                '更新失败，请重试': 'Update failed, please try again',
+                '确定要删除这个优惠券吗？': 'Are you sure you want to delete this coupon?',
+                '此操作不可撤销！': 'This action cannot be undone!',
+                '是的，删除它': 'Yes, delete it',
+                '已删除': 'Deleted',
+                '优惠券已成功删除': 'Coupon has been successfully deleted',
+                '删除失败': 'Delete failed',
+                '删除失败，请重试': 'Delete failed, please try again',
+                '搜索失败': 'Search failed',
+                '服务器错误，请稍后再试': 'Server error, please try again later',
+                '没有找到匹配的用户': 'No matching users found',
+                '编辑': 'Edit',
+                '获取用户信息失败': 'Failed to get user information',
+                '用户信息更新成功': 'User information updated successfully',
+                '更新失败': 'Update failed'
+            }
+        };
+
+        // 设置语言切换按钮逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取语言按钮
+            const languageToggle = document.getElementById('language-toggle');
+            
+            // 从localStorage获取当前语言设置
+            const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+            updateLanguageButtonText(currentLang);
+            
+            // 应用初始语言设置
+            translatePage(currentLang);
+            
+            // 绑定点击事件
+            if (languageToggle) {
+                languageToggle.addEventListener('click', function() {
+                    const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+                    const newLang = currentLang === 'zh' ? 'en' : 'zh';
+                    
+                    // 保存新的语言设置
+                    localStorage.setItem('preferredLanguage', newLang);
+                    
+                    // 更新按钮显示
+                    updateLanguageButtonText(newLang);
+                    
+                    // 执行翻译
+                    translatePage(newLang);
+                    
+                    // 显示提示
+                    const message = newLang === 'zh' ? '已切换到中文' : 'Switched to English';
+                    showToast(message);
+                    
+                    // 刷新页面以确保所有元素都被正确翻译
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                });
+            }
+            
+            // 更新语言按钮文本
+            function updateLanguageButtonText(lang) {
+                const langText = document.getElementById('current-language');
+                if (langText) {
+                    langText.textContent = lang === 'zh' ? '中文' : 'EN';
+                }
+            }
+            
+            // 延迟额外翻译，以确保动态加载的内容也能被翻译
+            setTimeout(() => {
+                const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+                translatePage(currentLang);
+            }, 300);
+            
+            // 管理员页面特殊处理：监听DOM变化以应用翻译
+            if (window.location.pathname.includes('/admin')) {
+                // 用于管理员页面的DOM变化监听器
+                const observer = new MutationObserver(function(mutations) {
+                    const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+                    if (currentLang === 'zh') return; // 如果是中文不需要翻译
+                    
+                    // 对于每个变化，检查新添加的节点并翻译它们
+                    for (let mutation of mutations) {
+                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                            for (let node of mutation.addedNodes) {
+                                if (node.nodeType === 1) { // 只处理元素节点
+                                    // 翻译新添加的表格行
+                                    translateNewElements(node, currentLang);
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                // 开始观察document.body的变化，包括子树
+                observer.observe(document.body, { childList: true, subtree: true });
+                
+                // 对于模态框内容的翻译
+                const modalObserver = new MutationObserver(function(mutations) {
+                    const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+                    if (currentLang === 'zh') return;
+                    
+                    setTimeout(() => {
+                        for (let modalElement of document.querySelectorAll('.modal.show')) {
+                            translateModalContent(modalElement, currentLang);
+                        }
+                    }, 100); // 短延迟确保内容已加载
+                });
+                
+                // 观察模态框的变化
+                modalObserver.observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+            }
+            
+            // 翻译新添加的元素
+            function translateNewElements(element, language) {
+                // 翻译文本节点
+                const textNodes = element.querySelectorAll('th, td, button, label, h1, h2, h3, h4, h5, p, span, a');
+                textNodes.forEach(node => {
+                    const text = node.textContent.trim();
+                    if (text && translations[language][text]) {
+                        node.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译按钮
+                const buttons = element.querySelectorAll('button');
+                buttons.forEach(button => {
+                    const text = button.textContent.trim();
+                    if (text && translations[language][text]) {
+                        button.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译输入框占位符
+                const inputs = element.querySelectorAll('input[placeholder]');
+                inputs.forEach(input => {
+                    const placeholder = input.getAttribute('placeholder');
+                    if (placeholder && translations[language][placeholder]) {
+                        input.setAttribute('placeholder', translations[language][placeholder]);
+                    }
+                });
+            }
+            
+            // 翻译模态框内容
+            function translateModalContent(modal, language) {
+                // 翻译标题
+                const title = modal.querySelector('.modal-title');
+                if (title) {
+                    const text = title.textContent.trim();
+                    if (text && translations[language][text]) {
+                        title.textContent = translations[language][text];
+                    }
+                }
+                
+                // 翻译表单标签
+                const labels = modal.querySelectorAll('.form-label');
+                labels.forEach(label => {
+                    const text = label.textContent.trim();
+                    if (text && translations[language][text]) {
+                        label.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译按钮
+                const buttons = modal.querySelectorAll('button');
+                buttons.forEach(button => {
+                    const text = button.textContent.trim();
+                    if (text && translations[language][text]) {
+                        button.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译表单文本
+                const formTexts = modal.querySelectorAll('.form-text');
+                formTexts.forEach(text => {
+                    const content = text.textContent.trim();
+                    if (content && translations[language][content]) {
+                        text.textContent = translations[language][content];
+                    }
+                });
+                
+                // 翻译选项
+                const options = modal.querySelectorAll('option');
+                options.forEach(option => {
+                    const text = option.textContent.trim();
+                    if (text && translations[language][text]) {
+                        option.textContent = translations[language][text];
+                    }
+                });
+            }
+        });
+
+        // 提供翻译函数
+        function translatePage(language) {
+            console.log(`Translating page to ${language}`);
+            
+            // 先调用特定页面的翻译函数
+            if (window.location.pathname.includes('/admin')) {
+                if (window.location.pathname.includes('/withdrawals') || window.location.pathname.includes('/withdrawal')) {
+                    translateWithdrawalPage(language);
+                } else {
+                    translateAdminPage(language);
+                }
+            } else if (window.location.pathname.includes('/dashboard')) {
+                translateDashboardPage(language);
+            } else if (window.location.pathname.includes('/withdrawals')) {
+                translateWithdrawalPage(language);
+            } else if (window.location.pathname === '/' || window.location.pathname.includes('/index')) {
+                translateHomePage(language);
+            } else if (window.location.pathname.includes('/login')) {
+                translateLoginPage(language);
+            } else if (window.location.pathname.includes('/register')) {
+                translateRegisterPage(language);
+            }
+            
+            // 通用元素翻译（导航栏、页脚等）
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (translations[language][key]) {
+                    element.textContent = translations[language][key];
+                }
+            });
+            
+            // 遍历所有文本节点进行翻译
+            translateTextNodes(document.body, language);
+            
+            // 翻译按钮和表单元素
+            translateButtonsAndForms(language);
+            
+            // 翻译弹窗内容
+            translateNotifications(language);
+            
+            // 额外确保顶部导航栏和页脚也被翻译
+            document.querySelectorAll('.navbar-nav .nav-link, footer h5, footer a, footer p').forEach(element => {
+                const text = element.textContent.trim();
+                if (translations[language][text]) {
+                    element.textContent = translations[language][text];
+                }
+            });
+        }
+
+        // 遍历DOM中的所有文本节点并翻译
+        function translateTextNodes(element, language) {
+            if (element.nodeType === Node.TEXT_NODE) {
+                const text = element.textContent.trim();
+                if (text && translations[language][text]) {
+                    element.textContent = element.textContent.replace(text, translations[language][text]);
+                }
+            } else {
+                for (let i = 0; i < element.childNodes.length; i++) {
+                    translateTextNodes(element.childNodes[i], language);
+                }
+            }
+        }
+
+        // 首页特定翻译
+        function translateHomePage(language) {
+            console.log("Translating home page");
+            
+            // 轮播图标题
+            document.querySelectorAll('.carousel-title').forEach(title => {
+                const text = title.textContent.trim();
+                if (translations[language][text]) {
+                    title.textContent = translations[language][text];
+                }
+            });
+            
+            // 轮播图描述
+            document.querySelectorAll('.carousel-text').forEach(desc => {
+                const text = desc.textContent.trim();
+                if (translations[language][text]) {
+                    desc.textContent = translations[language][text];
+                }
+            });
+            
+            // 店铺信息
+            document.querySelectorAll('.banner-title, .banner-text, .feature-title, .feature-desc, .referral-title, .referral-desc, .global-title, .global-desc, .register-cta-title, .register-cta-desc').forEach(element => {
+                const text = element.textContent.trim();
+                if (translations[language][text]) {
+                    element.textContent = translations[language][text];
+                }
+            });
+            
+            // 按钮文本
+            document.querySelectorAll('.gold-btn').forEach(btn => {
+                const text = btn.textContent.trim();
+                if (translations[language][text]) {
+                    btn.textContent = translations[language][text];
+                }
+            });
+            
+            // 店铺详情
+            document.querySelectorAll('.store-details h2, .store-details strong, .store-details .opening-hours p, .contact-info h4').forEach(element => {
+                const text = element.textContent.trim();
+                if (translations[language][text]) {
+                    element.textContent = translations[language][text];
+                }
+            });
+        }
+
+        // 翻译所有按钮和表单元素
+        function translateButtonsAndForms(language) {
+            // 翻译按钮
+            document.querySelectorAll('button, input[type="submit"], input[type="button"], .btn').forEach(button => {
+                const text = button.textContent.trim();
+                if (text && translations[language][text]) {
+                    button.textContent = translations[language][text];
+                }
+                
+                // 翻译placeholder
+                if (button.placeholder && translations[language][button.placeholder]) {
+                    button.placeholder = translations[language][button.placeholder];
+                }
+            });
+            
+            // 翻译表单标签
+            document.querySelectorAll('label').forEach(label => {
+                const text = label.textContent.trim();
+                if (text && translations[language][text]) {
+                    label.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译输入框placeholder
+            document.querySelectorAll('input[placeholder], textarea[placeholder]').forEach(input => {
+                if (input.placeholder && translations[language][input.placeholder]) {
+                    input.placeholder = translations[language][input.placeholder];
+                }
+            });
+        }
+
+        // 翻译通知和弹窗
+        function translateNotifications(language) {
+            // 翻译Toast通知
+            document.querySelectorAll('.toast .toast-body').forEach(toast => {
+                const text = toast.textContent.trim();
+                if (text && translations[language][text]) {
+                    toast.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译Alert消息
+            document.querySelectorAll('.alert').forEach(alert => {
+                const text = alert.textContent.trim();
+                if (text && translations[language][text]) {
+                    alert.textContent = translations[language][text];
+                }
+            });
+        }
+
+        // 处理页面上的特殊元素
+        function translateSpecialElements(language) {
+            console.log('Translating special elements');
+            
+            // 处理首页门店信息
+            if (window.location.pathname === '/' || window.location.pathname === '/index') {
+                // 翻译门店信息中的标签文本
+                document.querySelectorAll('.store-info-card strong').forEach(element => {
+                    const text = element.textContent.trim();
+                    if (translations[language][text]) {
+                        element.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译联系信息标题
+                document.querySelectorAll('.contact-info h4').forEach(element => {
+                    const text = element.textContent.trim();
+                    if (translations[language][text]) {
+                        element.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译地址前的标签
+                document.querySelectorAll('.address-info p strong').forEach(element => {
+                    const text = element.textContent.trim();
+                    if (translations[language][text]) {
+                        element.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译营业时间前的标签
+                document.querySelectorAll('.opening-hours p strong').forEach(element => {
+                    const text = element.textContent.trim();
+                    if (translations[language][text]) {
+                        element.textContent = translations[language][text];
+                    }
+                });
+            }
+        }
+
+        // 确保在DOM加载和动态内容加载后应用翻译
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载用户偏好的语言并立即应用
+            const userLang = localStorage.getItem('preferredLanguage') || 'zh';
+            
+            // 应用初始翻译
+            setTimeout(() => {
+                translatePage(userLang);
+                translateSpecialElements(userLang);
+            }, 300);
+            
+            // 对于仪表板页面，需要额外延迟确保所有动态内容都被翻译
+            if (window.location.pathname.includes('/dashboard')) {
+                setTimeout(() => {
+                    translatePage(userLang);
+                    translateSpecialElements(userLang);
+                }, 800);
+            }
+        });
+
+        function translateAdminPage(language) {
+            console.log(`翻译管理员页面到 ${language}`);
+            
+            // 翻译页面标题和卡片标题
+            document.querySelectorAll('.card-title, .modal-title').forEach(title => {
+                const text = title.textContent.trim();
+                if (translations[language][text]) {
+                    title.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译文本提示
+            document.querySelectorAll('.text-muted, p').forEach(text => {
+                const content = text.textContent.trim();
+                if (translations[language][content]) {
+                    text.textContent = translations[language][content];
+                }
+            });
+            
+            // 翻译表格标题
+            document.querySelectorAll('th').forEach(header => {
+                const text = header.textContent.trim();
+                if (translations[language][text]) {
+                    header.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译按钮文本
+            document.querySelectorAll('button, .btn').forEach(button => {
+                const text = button.textContent.trim();
+                if (translations[language][text]) {
+                    button.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译导航标签
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const text = link.textContent.trim();
+                if (translations[language][text]) {
+                    link.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译表单标签
+            document.querySelectorAll('label').forEach(label => {
+                const text = label.textContent.trim();
+                if (translations[language][text]) {
+                    label.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译输入框提示文本
+            document.querySelectorAll('input[placeholder]').forEach(input => {
+                const placeholder = input.getAttribute('placeholder');
+                if (placeholder && translations[language][placeholder]) {
+                    input.setAttribute('placeholder', translations[language][placeholder]);
+                }
+            });
+            
+            // 翻译下拉选项
+            document.querySelectorAll('option').forEach(option => {
+                const text = option.textContent.trim();
+                if (translations[language][text]) {
+                    option.textContent = translations[language][text];
+                }
+            });
+            
+            // 翻译用户详细信息模态框
+            const userDetailModal = document.getElementById('userDetailModal');
+            if (userDetailModal) {
+                // 翻译标题
+                const modalTitle = userDetailModal.querySelector('.modal-title');
+                if (modalTitle && translations[language][modalTitle.textContent.trim()]) {
+                    modalTitle.textContent = translations[language][modalTitle.textContent.trim()];
+                }
+                
+                // 翻译加载提示
+                const loadingText = userDetailModal.querySelector('#user-detail-loading p');
+                if (loadingText && translations[language][loadingText.textContent.trim()]) {
+                    loadingText.textContent = translations[language][loadingText.textContent.trim()];
+                }
+                
+                // 翻译标签页
+                const tabs = userDetailModal.querySelectorAll('.nav-link');
+                tabs.forEach(tab => {
+                    const text = tab.textContent.trim();
+                    if (translations[language][text]) {
+                        tab.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译表单字段标签
+                const labels = userDetailModal.querySelectorAll('label');
+                labels.forEach(label => {
+                    const text = label.textContent.trim();
+                    if (translations[language][text]) {
+                        label.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译统计卡片标题
+                const cardTitles = userDetailModal.querySelectorAll('.card-body h5');
+                cardTitles.forEach(title => {
+                    const text = title.textContent.trim();
+                    if (translations[language][text]) {
+                        title.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译表格中的"暂无数据"信息
+                const emptyTableTexts = userDetailModal.querySelectorAll('td[colspan]');
+                emptyTableTexts.forEach(cell => {
+                    const text = cell.textContent.trim();
+                    if (translations[language][text]) {
+                        cell.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译按钮
+                const buttons = userDetailModal.querySelectorAll('button');
+                buttons.forEach(button => {
+                    const text = button.textContent.trim();
+                    if (translations[language][text]) {
+                        button.textContent = translations[language][text];
+                    }
+                });
+                
+                // 翻译总充值金额文本
+                const totalRechargeText = $(userDetailModal).find('h5:contains("总充值金额")');
+                if (totalRechargeText && totalRechargeText.length > 0) {
+                    const translated = translations[language]["总充值金额"] || "Total Recharge Amount";
+                    totalRechargeText.text(translated);
+                }
+            }
+            
+            // 翻译确认对话框信息
+            if (language === 'en') {
+                // 替换JavaScript确认对话框文本
+                const script = document.createElement('script');
+                script.textContent = `
+                    // 替换确认对话框文本
+                    const originalConfirm = window.confirm;
+                    window.confirm = function(message) {
+                        // 替换常见确认消息
+                        if (message.includes('确定要')) {
+                            message = message.replace('确定要', 'Are you sure you want to');
+                        }
+                        if (message.includes('删除')) {
+                            message = message.replace('删除', 'delete');
+                        }
+                        if (message.includes('禁用')) {
+                            message = message.replace('禁用', 'disable');
+                        }
+                        if (message.includes('启用')) {
+                            message = message.replace('启用', 'enable');
+                        }
+                        if (message.includes('这个优惠券吗')) {
+                            message = message.replace('这个优惠券吗', 'this coupon?');
+                        }
+                        if (message.includes('此操作不可撤销')) {
+                            message = message.replace('此操作不可撤销', 'This action cannot be undone');
+                        }
+                        return originalConfirm(message);
+                    };
+                    
+                    // 如果存在SweetAlert库，替换其常用文本
+                    if (typeof Swal !== 'undefined') {
+                        const originalSwalFire = Swal.fire;
+                        Swal.fire = function(options) {
+                            if (typeof options === 'object') {
+                                // 翻译常见标题
+                                if (options.title) {
+                                    const titleText = options.title.toString();
+                                    if (titleText === '确定要删除这个优惠券吗？') {
+                                        options.title = 'Are you sure you want to delete this coupon?';
+                                    }
+                                    else if (titleText === '修改过期日期') {
+                                        options.title = 'Modify Expiry Date';
+                                    }
+                                    else if (titleText === '成功') {
+                                        options.title = 'Success';
+                                    }
+                                    else if (titleText === '错误') {
+                                        options.title = 'Error';
+                                    }
+                                }
+                                
+                                // 翻译消息文本
+                                if (options.text) {
+                                    const textContent = options.text.toString();
+                                    if (textContent === '此操作不可撤销！') {
+                                        options.text = 'This action cannot be undone!';
+                                    }
+                                    else if (textContent === '过期日期已更新') {
+                                        options.text = 'Expiry date has been updated';
+                                    }
+                                    else if (textContent === '更新失败') {
+                                        options.text = 'Update failed';
+                                    }
+                                    else if (textContent === '优惠券已成功删除') {
+                                        options.text = 'Coupon has been successfully deleted';
+                                    }
+                                }
+                                
+                                // 翻译按钮文本
+                                if (options.confirmButtonText) {
+                                    const btnText = options.confirmButtonText.toString();
+                                    if (btnText === '是的，删除它') {
+                                        options.confirmButtonText = 'Yes, delete it';
+                                    }
+                                    else if (btnText === '保存') {
+                                        options.confirmButtonText = 'Save';
+                                    }
+                                }
+                                
+                                if (options.cancelButtonText && options.cancelButtonText === '取消') {
+                                    options.cancelButtonText = 'Cancel';
+                                }
+                            }
+                            return originalSwalFire.apply(Swal, arguments);
+                        };
+                    }
+                    
+                    // 修复jQuery选择器
+                    if (typeof jQuery !== 'undefined') {
+                        // 添加:contains选择器的支持
+                        jQuery.expr[':'].contains = function(a, i, m) {
+                            return jQuery(a).text().toUpperCase()
+                                .indexOf(m[3].toUpperCase()) >= 0;
+                        };
+                    }
+                `;
+                document.head.appendChild(script);
+            }
+            
+            console.log('管理员页面翻译完成');
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

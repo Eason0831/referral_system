@@ -1,0 +1,10 @@
+请上传以下图片到此目录:
+
+1. logo.png - 网站左上角显示的logo
+2. slide1.jpg - 轮播图第一张图片
+3. slide2.jpg - 轮播图第二张图片
+4. slide3.jpg - 轮播图第三张图片
+5. banner-vancouver.jpg - 温哥华店图片
+6. banner-newyork.jpg - 纽约店图片
+
+所有图片应当使用高质量图片，尤其是轮播图建议尺寸至少为1920x1080像素。 
